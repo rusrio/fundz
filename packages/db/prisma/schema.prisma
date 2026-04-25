@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AgentStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum IntentStatus {
+  RECEIVED
+  POLICY_APPROVED
+  POLICY_REJECTED
+  EXECUTING
+  EXECUTED
+  FAILED
+}
+
+enum ExecutionStatus {
+  PENDING
+  SUBMITTED
+  CONFIRMED
+  FAILED
+}
+
+model Agent {
+  id           String   @id @default(uuid())
+  name         String
+  ownerAddress String   @unique
+  safeAddress  String?
+  status       AgentStatus @default(ACTIVE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  policy     Policy?
+  intents    Intent[]
+  executions Execution[]
+}
+
+model Policy {
+  id                    String   @id @default(uuid())
+  agentId               String   @unique
+  chainId               Int
+  allowedTokenAddresses String
+  maxAmountPerOperation String
+  cooldownSeconds       Int
+  dailyLimit            String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+}
+
+model Intent {
+  id             String       @id @default(uuid())
+  agentId        String
+  nonce          String
+  action         String
+  chainId        Int
+  tokenIn        String
+  tokenOut       String
+  amountIn       String
+  maxSlippageBps Int
+  deadline       DateTime
+  signature      String
+  status         IntentStatus @default(RECEIVED)
+  rejectionReason String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  agent      Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?
+  execution  Execution?
+
+  @@unique([agentId, nonce])
+  @@index([agentId, createdAt])
+  @@index([status])
+}
+
+model Evaluation {
+  id          String   @id @default(uuid())
+  intentId    String   @unique
+  approved    Boolean
+  reasons     String
+  evaluatedAt DateTime @default(now())
+
+  intent Intent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+}
+
+model Execution {
+  id           String          @id @default(uuid())
+  intentId     String          @unique
+  agentId      String
+  safeAddress  String
+  adapter      String
+  status       ExecutionStatus @default(PENDING)
+  txHash       String?
+  amountIn     String
+  amountOut    String?
+  errorMessage String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  intent Intent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@index([status])
+}

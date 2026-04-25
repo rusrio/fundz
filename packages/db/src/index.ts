@@ -1,1 +1,1 @@
-export const dbPackageName = "@fundz/db";
+export { prisma } from "./client.js";
