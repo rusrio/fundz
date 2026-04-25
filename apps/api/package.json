@@ -1,0 +1,19 @@
+{
+  "name": "@fundz/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "node --watch dist/index.js"
+  },
+  "dependencies": {
+    "@fundz/core": "workspace:*",
+    "@fundz/db": "workspace:*",
+    "@fundz/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
