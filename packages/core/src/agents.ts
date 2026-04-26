@@ -1,0 +1,71 @@
+import { prisma } from "@fundz/db";
+import {
+  type Agent,
+  type Policy,
+  type RegisterAgentRequest,
+  registerAgentRequestSchema
+} from "@fundz/shared";
+import { toAgent, toPolicy } from "./mappers.js";
+
+const defaultAllowedTokens = [
+  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+];
+
+const defaultPolicy = {
+  chainId: 1,
+  allowedTokenAddresses: JSON.stringify(defaultAllowedTokens),
+  maxAmountPerOperation: "1000000000",
+  cooldownSeconds: 60,
+  dailyLimit: "5000000000"
+};
+
+export async function registerAgent(input: RegisterAgentRequest): Promise<{
+  agent: Agent;
+  policy: Policy;
+}> {
+  const request = registerAgentRequestSchema.parse(input);
+
+  const agent = await prisma.agent.upsert({
+    where: { ownerAddress: request.ownerAddress },
+    update: {
+      name: request.name,
+      safeAddress: request.safeAddress
+    },
+    create: {
+      name: request.name,
+      ownerAddress: request.ownerAddress,
+      safeAddress: request.safeAddress
+    }
+  });
+
+  const policy = await prisma.policy.upsert({
+    where: { agentId: agent.id },
+    update: {},
+    create: {
+      agentId: agent.id,
+      ...defaultPolicy
+    }
+  });
+
+  return {
+    agent: toAgent(agent),
+    policy: toPolicy(policy)
+  };
+}
+
+export async function authenticateAgent(ownerAddress: string): Promise<Agent | null> {
+  const agent = await prisma.agent.findUnique({
+    where: { ownerAddress }
+  });
+
+  return agent ? toAgent(agent) : null;
+}
+
+export async function listAgents(): Promise<Agent[]> {
+  const agents = await prisma.agent.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+
+  return agents.map(toAgent);
+}
