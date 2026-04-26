@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isoDateTimeSchema } from "./common.js";
 
 export const policyCheckCodeSchema = z.enum([
+  "chain_not_allowed",
   "token_not_allowed",
   "amount_exceeds_max",
   "cooldown_active",

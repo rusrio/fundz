@@ -1,16 +1,22 @@
 import { prisma } from "@fundz/db";
 import { type SignedIntent, type StoredIntent, signedIntentSchema } from "@fundz/shared";
 import { toStoredIntent } from "./mappers.js";
+import { evaluateIntentPolicy } from "./policy-engine.js";
 
 export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
   const intent = signedIntentSchema.parse(input);
 
   const agent = await prisma.agent.findUnique({
-    where: { id: intent.agentId }
+    where: { id: intent.agentId },
+    include: { policy: true }
   });
 
   if (!agent) {
     throw new Error("Agent not found");
+  }
+
+  if (!agent.policy) {
+    throw new Error("Policy not found");
   }
 
   const record = await prisma.intent.create({
@@ -29,7 +35,25 @@ export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
     }
   });
 
-  return toStoredIntent(record);
+  const evaluation = await evaluateIntentPolicy(record, agent.policy);
+  const nextStatus = evaluation.approved ? "POLICY_APPROVED" : "POLICY_REJECTED";
+  const rejectionReason = evaluation.approved ? null : evaluation.reasons.join(",");
+
+  const updatedIntent = await prisma.intent.update({
+    where: { id: record.id },
+    data: {
+      status: nextStatus,
+      rejectionReason,
+      evaluation: {
+        create: {
+          approved: evaluation.approved,
+          reasons: JSON.stringify(evaluation.reasons)
+        }
+      }
+    }
+  });
+
+  return toStoredIntent(updatedIntent);
 }
 
 export async function listIntents(): Promise<StoredIntent[]> {

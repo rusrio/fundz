@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@fundz/db": "workspace:*",
+    "@fundz/safe-kit": "workspace:*",
     "@fundz/shared": "workspace:*"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import { prisma } from "@fundz/db";
+import { linkExistingSafe } from "@fundz/safe-kit";
 import {
   type Agent,
   type Policy,
@@ -68,4 +69,31 @@ export async function listAgents(): Promise<Agent[]> {
   });
 
   return agents.map(toAgent);
+}
+
+export async function linkAgentSafe(input: { agentId: string; safeAddress: string }): Promise<Agent> {
+  const safe = linkExistingSafe(input);
+
+  const agent = await prisma.agent.update({
+    where: { id: safe.agentId },
+    data: { safeAddress: safe.safeAddress }
+  });
+
+  return toAgent(agent);
+}
+
+export async function getAgentSafe(agentId: string): Promise<{ agentId: string; safeAddress: string } | null> {
+  const agent = await prisma.agent.findUnique({
+    where: { id: agentId },
+    select: { id: true, safeAddress: true }
+  });
+
+  if (!agent?.safeAddress) {
+    return null;
+  }
+
+  return {
+    agentId: agent.id,
+    safeAddress: agent.safeAddress
+  };
 }

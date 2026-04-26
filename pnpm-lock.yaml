@@ -69,6 +69,9 @@ importers:
       '@fundz/db':
         specifier: workspace:*
         version: link:../db
+      '@fundz/safe-kit':
+        specifier: workspace:*
+        version: link:../safe-kit
       '@fundz/shared':
         specifier: workspace:*
         version: link:../shared

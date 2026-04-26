@@ -2,7 +2,9 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import {
   authenticateAgent,
   getDashboardSnapshot,
+  getAgentSafe,
   getPolicy,
+  linkAgentSafe,
   registerAgent,
   submitIntent
 } from "@fundz/core";
@@ -89,6 +91,40 @@ const server = createServer(async (request, response) => {
 
       sendJson(response, 200, { policy });
       return;
+    }
+
+    if (url.pathname.startsWith("/agents/") && url.pathname.endsWith("/safe")) {
+      const agentId = url.pathname.split("/")[2];
+
+      if (!agentId) {
+        sendError(response, 400, "agentId is required");
+        return;
+      }
+
+      if (request.method === "GET") {
+        const safe = await getAgentSafe(agentId);
+
+        if (!safe) {
+          sendError(response, 404, "Safe not linked");
+          return;
+        }
+
+        sendJson(response, 200, { safe });
+        return;
+      }
+
+      if (request.method === "POST") {
+        const body = (await readJson(request)) as { safeAddress?: string };
+
+        if (!body.safeAddress) {
+          sendError(response, 400, "safeAddress is required");
+          return;
+        }
+
+        const agent = await linkAgentSafe({ agentId, safeAddress: body.safeAddress });
+        sendJson(response, 200, { agent });
+        return;
+      }
     }
 
     const handler = handlers[routeKey(request)];
