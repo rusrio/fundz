@@ -26,6 +26,9 @@ importers:
       '@fundz/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
     devDependencies:
       typescript:
         specifier: ^5.8.3
@@ -75,6 +78,9 @@ importers:
       '@fundz/shared':
         specifier: workspace:*
         version: link:../shared
+      '@fundz/uniswap-adapter':
+        specifier: workspace:*
+        version: link:../adapters/uniswap
     devDependencies:
       typescript:
         specifier: ^5.8.3

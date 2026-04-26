@@ -1,13 +1,19 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import {
-  authenticateAgent,
-  getDashboardSnapshot,
-  getAgentSafe,
-  getPolicy,
-  linkAgentSafe,
-  registerAgent,
-  submitIntent
-} from "@fundz/core";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
+
+const envPath = resolve(process.cwd(), ".env");
+const repoEnvPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../..", ".env");
+
+if (existsSync(envPath)) {
+  config({ path: envPath });
+}
+
+if (repoEnvPath !== envPath && existsSync(repoEnvPath)) {
+  config({ path: repoEnvPath, override: false });
+}
 
 const port = Number(process.env.PORT ?? 3001);
 
@@ -44,31 +50,46 @@ function routeKey(request: IncomingMessage): string {
 }
 
 const handlers: Record<string, Handler> = {
-  "GET /health": async (_request, response) => {
-    sendJson(response, 200, { ok: true, service: "fundz-api" });
-  },
-  "POST /agents/register": async (request, response) => {
-    const result = await registerAgent((await readJson(request)) as never);
-    sendJson(response, 201, result);
-  },
-  "POST /agents/authenticate": async (request, response) => {
-    const body = (await readJson(request)) as { ownerAddress?: string };
+};
 
-    if (!body.ownerAddress) {
-      sendError(response, 400, "ownerAddress is required");
-      return;
-    }
+const {
+  authenticateAgent,
+  getAgentSafe,
+  getDashboardSnapshot,
+  getPolicy,
+  linkAgentSafe,
+  registerAgent,
+  submitIntent
+} = await import("@fundz/core");
 
-    const agent = await authenticateAgent(body.ownerAddress);
-    sendJson(response, 200, { agent });
-  },
-  "GET /dashboard": async (_request, response) => {
-    sendJson(response, 200, await getDashboardSnapshot());
-  },
-  "POST /intents": async (request, response) => {
-    const intent = await submitIntent((await readJson(request)) as never);
-    sendJson(response, 201, { intent });
+handlers["GET /health"] = async (_request, response) => {
+  sendJson(response, 200, { ok: true, service: "fundz-api" });
+};
+
+handlers["POST /agents/register"] = async (request, response) => {
+  const result = await registerAgent((await readJson(request)) as never);
+  sendJson(response, 201, result);
+};
+
+handlers["POST /agents/authenticate"] = async (request, response) => {
+  const body = (await readJson(request)) as { ownerAddress?: string };
+
+  if (!body.ownerAddress) {
+    sendError(response, 400, "ownerAddress is required");
+    return;
   }
+
+  const agent = await authenticateAgent(body.ownerAddress);
+  sendJson(response, 200, { agent });
+};
+
+handlers["GET /dashboard"] = async (_request, response) => {
+  sendJson(response, 200, await getDashboardSnapshot());
+};
+
+handlers["POST /intents"] = async (request, response) => {
+  const intent = await submitIntent((await readJson(request)) as never);
+  sendJson(response, 201, { intent });
 };
 
 const server = createServer(async (request, response) => {

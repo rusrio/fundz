@@ -1,4 +1,4 @@
-import type { Agent, Policy, StoredIntent } from "@fundz/shared";
+import type { Agent, Execution, Policy, StoredIntent } from "@fundz/shared";
 
 type AgentRecord = {
   id: string;
@@ -46,6 +46,21 @@ type IntentRecord = {
   updatedAt: Date;
 };
 
+type ExecutionRecord = {
+  id: string;
+  intentId: string;
+  agentId: string;
+  safeAddress: string;
+  adapter: string;
+  status: "PENDING" | "SUBMITTED" | "CONFIRMED" | "FAILED";
+  txHash: string | null;
+  amountIn: string;
+  amountOut: string | null;
+  errorMessage: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const agentStatusMap = {
   ACTIVE: "active",
   DISABLED: "disabled"
@@ -57,6 +72,13 @@ const intentStatusMap = {
   POLICY_REJECTED: "policy_rejected",
   EXECUTING: "executing",
   EXECUTED: "executed",
+  FAILED: "failed"
+} as const;
+
+const executionStatusMap = {
+  PENDING: "pending",
+  SUBMITTED: "submitted",
+  CONFIRMED: "confirmed",
   FAILED: "failed"
 } as const;
 
@@ -105,6 +127,23 @@ export function toStoredIntent(record: IntentRecord): StoredIntent {
     signature: record.signature,
     status: intentStatusMap[record.status],
     rejectionReason: record.rejectionReason,
+    createdAt: toIsoDate(record.createdAt),
+    updatedAt: toIsoDate(record.updatedAt)
+  };
+}
+
+export function toExecution(record: ExecutionRecord): Execution {
+  return {
+    id: record.id,
+    intentId: record.intentId,
+    agentId: record.agentId,
+    safeAddress: record.safeAddress,
+    adapter: "uniswap",
+    status: executionStatusMap[record.status],
+    txHash: record.txHash,
+    amountIn: record.amountIn,
+    amountOut: record.amountOut,
+    errorMessage: record.errorMessage,
     createdAt: toIsoDate(record.createdAt),
     updatedAt: toIsoDate(record.updatedAt)
   };

@@ -1,6 +1,7 @@
 import { prisma } from "@fundz/db";
 import { type SignedIntent, type StoredIntent, signedIntentSchema } from "@fundz/shared";
 import { toStoredIntent } from "./mappers.js";
+import { prepareUniswapExecution } from "./execution.js";
 import { evaluateIntentPolicy } from "./policy-engine.js";
 
 export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
@@ -52,6 +53,10 @@ export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
       }
     }
   });
+
+  if (evaluation.approved) {
+    await prepareUniswapExecution(updatedIntent);
+  }
 
   return toStoredIntent(updatedIntent);
 }

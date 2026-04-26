@@ -12,7 +12,8 @@
   "dependencies": {
     "@fundz/core": "workspace:*",
     "@fundz/db": "workspace:*",
-    "@fundz/shared": "workspace:*"
+    "@fundz/shared": "workspace:*",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

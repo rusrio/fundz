@@ -19,7 +19,8 @@
   "dependencies": {
     "@fundz/db": "workspace:*",
     "@fundz/safe-kit": "workspace:*",
-    "@fundz/shared": "workspace:*"
+    "@fundz/shared": "workspace:*",
+    "@fundz/uniswap-adapter": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

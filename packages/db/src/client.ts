@@ -2,8 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-if (!process.env.DATABASE_URL) {
-  const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL === "file:./dev.db") {
   process.env.DATABASE_URL = `file:${join(packageRoot, "prisma", "dev.db")}`;
 }
 

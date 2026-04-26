@@ -1,12 +1,12 @@
-import { prisma } from "@fundz/db";
 import { listAgents } from "./agents.js";
+import { listExecutions } from "./execution.js";
 import { listIntents } from "./intents.js";
 
 export async function getDashboardSnapshot() {
   const [agents, intents, executions] = await Promise.all([
     listAgents(),
     listIntents(),
-    prisma.execution.count()
+    listExecutions()
   ]);
 
   return {
@@ -15,7 +15,8 @@ export async function getDashboardSnapshot() {
     metrics: {
       agentCount: agents.length,
       intentCount: intents.length,
-      executionCount: executions
-    }
+      executionCount: executions.length
+    },
+    executions
   };
 }
