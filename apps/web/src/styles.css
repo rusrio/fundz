@@ -1,0 +1,326 @@
+:root {
+  color: #18201d;
+  background: #f6f4ef;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f6f4ef;
+}
+
+button {
+  font: inherit;
+}
+
+.shell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #d8d3c8;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #647067;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.refreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #1f2a24;
+  border-radius: 8px;
+  color: #f8f7f3;
+  background: #1f2a24;
+  cursor: pointer;
+}
+
+.refreshButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.errorBanner {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-left: 3px solid #b42318;
+  color: #7a271a;
+  background: #fff0ed;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 24px 0;
+  background: #d8d3c8;
+  border: 1px solid #d8d3c8;
+}
+
+.metric {
+  min-height: 116px;
+  padding: 18px;
+  background: #fffcf6;
+}
+
+.metricIcon {
+  display: inline-flex;
+  color: #176b4d;
+}
+
+.metric span {
+  display: block;
+  margin-top: 18px;
+  color: #66736b;
+  font-size: 13px;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 28px;
+  align-items: start;
+}
+
+.primaryColumn {
+  display: grid;
+  gap: 18px;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.tableHeader h2 {
+  font-size: 18px;
+}
+
+.tableHeader span {
+  color: #66736b;
+  font-size: 13px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border-top: 1px solid #d8d3c8;
+}
+
+table {
+  width: 100%;
+  min-width: 740px;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 11px 12px;
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  border-bottom: 1px solid #d8d3c8;
+}
+
+td {
+  padding: 14px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e2ded5;
+  vertical-align: top;
+}
+
+td strong {
+  display: block;
+  font-size: 14px;
+}
+
+td span {
+  display: block;
+  margin-top: 4px;
+  max-width: 340px;
+  color: #66736b;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #5a4a1f;
+  background: #fff3c4;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.statusPositive {
+  color: #0f5132;
+  background: #d1fadf;
+}
+
+.statusNegative {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.sidePanel {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 16px;
+  padding-left: 24px;
+  border-left: 1px solid #d8d3c8;
+}
+
+.executionFocus {
+  padding: 18px 0;
+  border-top: 1px solid #d8d3c8;
+  border-bottom: 1px solid #d8d3c8;
+}
+
+.executionFocus h2 {
+  margin-top: 14px;
+  font-size: 24px;
+}
+
+.executionFocus dl {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.executionFocus div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+dt {
+  color: #66736b;
+  font-size: 13px;
+}
+
+dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.executionFocus p,
+.emptyState {
+  color: #66736b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.executionList {
+  display: grid;
+  gap: 1px;
+  background: #d8d3c8;
+}
+
+.executionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: #fffcf6;
+}
+
+.executionRow strong,
+.executionRow span {
+  display: block;
+  font-size: 13px;
+}
+
+.executionRow div span {
+  margin-top: 3px;
+  color: #66736b;
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .shell {
+    padding: 20px;
+  }
+
+  .metricsGrid,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sidePanel {
+    position: static;
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric {
+    min-height: 100px;
+    padding: 14px;
+  }
+}
