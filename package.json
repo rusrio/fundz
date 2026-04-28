@@ -8,9 +8,17 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r --sort build && pnpm -r typecheck",
     "dev": "pnpm --parallel -r dev",
+    "dev:api": "pnpm --filter @fundz/api dev",
+    "dev:web": "pnpm --filter @fundz/web dev",
+    "dev:mcp": "pnpm --filter @fundz/mcp start",
+    "demo:tenderly:prepare": "pnpm --filter @fundz/db exec tsx ../../scripts/tenderly-demo.ts prepare",
+    "demo:tenderly:balances": "pnpm --filter @fundz/db exec tsx ../../scripts/tenderly-demo.ts balances",
+    "demo:tenderly:approve": "pnpm --filter @fundz/db exec tsx ../../scripts/tenderly-demo.ts approve",
+    "demo:tenderly:swap": "pnpm --filter @fundz/db exec tsx ../../scripts/tenderly-demo.ts swap",
     "db:generate": "pnpm --filter @fundz/db db:generate",
     "db:push": "pnpm --filter @fundz/db db:push",
-    "db:seed": "pnpm --filter @fundz/db db:seed"
+    "db:seed": "pnpm --filter @fundz/db db:seed",
+    "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed"
   },
   "devDependencies": {
     "@types/node": "^20.17.30",

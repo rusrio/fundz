@@ -8,17 +8,22 @@ import {
 } from "@fundz/shared";
 import { toAgent, toPolicy } from "./mappers.js";
 
+function envValue(name: string, fallback: string): string {
+  const value = process.env[name];
+  return value && value.length > 0 ? value : fallback;
+}
+
 const defaultAllowedTokens = [
-  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  envValue("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+  envValue("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
 ];
 
 const defaultPolicy = {
   chainId: 1,
   allowedTokenAddresses: JSON.stringify(defaultAllowedTokens),
-  maxAmountPerOperation: "1000000000",
+  maxAmountPerOperation: envValue("DEMO_MAX_AMOUNT_PER_OPERATION", "1000000000"),
   cooldownSeconds: 60,
-  dailyLimit: "5000000000"
+  dailyLimit: envValue("DEMO_DAILY_LIMIT", "5000000000")
 };
 
 export async function registerAgent(input: RegisterAgentRequest): Promise<{

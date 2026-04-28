@@ -26,6 +26,46 @@ pnpm typecheck
 
 Set `UNISWAP_API_KEY` in `.env` to enable real Uniswap quotes. Without it, approved intents still create a pending execution with a clear configuration message.
 
+## Tenderly Mainnet Fork Demo
+
+For the MVP, use a Tenderly Virtual TestNet forked from Ethereum mainnet instead of a public testnet. This keeps `chainId: 1` and gives the demo access to real Uniswap liquidity without sending transactions to mainnet.
+
+Create a mainnet Virtual TestNet in Tenderly, then configure `.env`:
+
+```bash
+TENDERLY_VNET_RPC_URL="<your Tenderly VNet RPC URL>"
+SAFE_RPC_URL="<same Tenderly VNet RPC URL>"
+SAFE_EXECUTOR_PRIVATE_KEY="<private key for a Safe signer on the fork>"
+SAFE_EXECUTOR_ADDRESS="<address for that private key>"
+SAFE_EXECUTION_GAS_LIMIT="3000000"
+DEMO_OWNER_ADDRESS="<demo agent owner>"
+DEMO_SAFE_ADDRESS="<existing Safe address on mainnet/fork>"
+DEMO_TOKEN_IN="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+DEMO_TOKEN_OUT="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+DEMO_AMOUNT_IN="1000000"
+DEMO_MAX_AMOUNT_PER_OPERATION="1000000000"
+DEMO_DAILY_LIMIT="5000000000"
+```
+
+Prepare the fork state and check balances:
+
+```bash
+pnpm demo:tenderly:prepare
+pnpm demo:tenderly:balances
+pnpm demo:tenderly:approve
+```
+
+The prepare step uses Tenderly admin RPC methods to set ETH on `SAFE_EXECUTOR_ADDRESS` and ERC-20 balance on `DEMO_SAFE_ADDRESS`. The approve step submits Safe transactions for the ERC-20 and Permit2 approvals needed by Uniswap Universal Router. The default token is USDC and the default balance is configured in base units through `DEMO_SAFE_TOKEN_BALANCE`.
+
+Run the API, then submit a demo swap intent:
+
+```bash
+pnpm dev:api
+pnpm demo:tenderly:swap
+```
+
+The API still evaluates the same Fundz policy. If approved, it requests a Uniswap quote/swap payload and executes it through Safe ProtocolKit against the Tenderly VNet RPC.
+
 ## Run The Demo
 
 Use separate terminals:
