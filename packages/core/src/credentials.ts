@@ -5,6 +5,17 @@ import { toAgent } from "./mappers.js";
 
 const tokenPrefix = "fundz_live_";
 
+export type AgentCredentialView = {
+  id: string;
+  agentId: string;
+  label: string | null;
+  status: "active" | "revoked";
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 function hashToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
@@ -38,6 +49,63 @@ export async function issueAgentCredential(input: {
     token,
     credentialId: credential.id
   };
+}
+
+function toCredentialView(credential: {
+  id: string;
+  agentId: string;
+  label: string | null;
+  status: "ACTIVE" | "REVOKED";
+  lastUsedAt: Date | null;
+  revokedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): AgentCredentialView {
+  return {
+    id: credential.id,
+    agentId: credential.agentId,
+    label: credential.label,
+    status: credential.status === "ACTIVE" ? "active" : "revoked",
+    lastUsedAt: credential.lastUsedAt?.toISOString() ?? null,
+    revokedAt: credential.revokedAt?.toISOString() ?? null,
+    createdAt: credential.createdAt.toISOString(),
+    updatedAt: credential.updatedAt.toISOString()
+  };
+}
+
+export async function listAgentCredentials(agentId: string): Promise<AgentCredentialView[]> {
+  const credentials = await prisma.agentCredential.findMany({
+    where: { agentId },
+    orderBy: { createdAt: "desc" }
+  });
+
+  return credentials.map(toCredentialView);
+}
+
+export async function revokeAgentCredential(input: {
+  agentId: string;
+  credentialId: string;
+}): Promise<AgentCredentialView> {
+  const credential = await prisma.agentCredential.findFirst({
+    where: {
+      id: input.credentialId,
+      agentId: input.agentId
+    }
+  });
+
+  if (!credential) {
+    throw new Error("Agent credential not found");
+  }
+
+  const revokedCredential = await prisma.agentCredential.update({
+    where: { id: credential.id },
+    data: {
+      status: "REVOKED",
+      revokedAt: credential.revokedAt ?? new Date()
+    }
+  });
+
+  return toCredentialView(revokedCredential);
 }
 
 export async function authenticateAgentToken(token: string): Promise<Agent> {

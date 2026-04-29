@@ -23,6 +23,9 @@ const {
   authenticateAgent,
   getDashboardSnapshot,
   getPolicy,
+  issueAgentCredential,
+  listAgentCredentials,
+  revokeAgentCredential,
   submitIntent
 } = await import("@fundz/core");
 
@@ -69,6 +72,53 @@ server.registerTool(
   async ({ agentId }) => {
     const policy = await getPolicy(agentId);
     return jsonContent({ policy });
+  }
+);
+
+server.registerTool(
+  "issue_agent_token",
+  {
+    title: "Issue Agent Token",
+    description: "Issue a new bearer token for an existing Fundz agent. The token is returned once.",
+    inputSchema: {
+      agentId: z.string().uuid(),
+      label: z.string().optional()
+    }
+  },
+  async ({ agentId, label }) => {
+    const credential = await issueAgentCredential({ agentId, label });
+    return jsonContent({ credential });
+  }
+);
+
+server.registerTool(
+  "list_agent_tokens",
+  {
+    title: "List Agent Tokens",
+    description: "List bearer token credentials for a Fundz agent without revealing token secrets.",
+    inputSchema: {
+      agentId: z.string().uuid()
+    }
+  },
+  async ({ agentId }) => {
+    const credentials = await listAgentCredentials(agentId);
+    return jsonContent({ credentials });
+  }
+);
+
+server.registerTool(
+  "revoke_agent_token",
+  {
+    title: "Revoke Agent Token",
+    description: "Revoke a bearer token credential for a Fundz agent.",
+    inputSchema: {
+      agentId: z.string().uuid(),
+      credentialId: z.string().uuid()
+    }
+  },
+  async ({ agentId, credentialId }) => {
+    const credential = await revokeAgentCredential({ agentId, credentialId });
+    return jsonContent({ credential });
   }
 );
 

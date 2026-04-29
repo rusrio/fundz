@@ -69,8 +69,10 @@ const {
   getDashboardSnapshot,
   getPolicy,
   issueAgentCredential,
+  listAgentCredentials,
   linkAgentSafe,
   registerAgent,
+  revokeAgentCredential,
   submitIntent
 } = await import("@fundz/core");
 
@@ -139,6 +141,47 @@ const server = createServer(async (request, response) => {
       }
 
       sendJson(response, 200, { policy });
+      return;
+    }
+
+    if (url.pathname.startsWith("/agents/") && url.pathname.endsWith("/credentials")) {
+      const agentId = url.pathname.split("/")[2];
+
+      if (!agentId) {
+        sendError(response, 400, "agentId is required");
+        return;
+      }
+
+      if (request.method === "GET") {
+        sendJson(response, 200, { credentials: await listAgentCredentials(agentId) });
+        return;
+      }
+
+      if (request.method === "POST") {
+        const body = (await readJson(request)) as { label?: string };
+        const credential = await issueAgentCredential({ agentId, label: body.label });
+        sendJson(response, 201, { credential });
+        return;
+      }
+    }
+
+    if (
+      request.method === "POST" &&
+      url.pathname.startsWith("/agents/") &&
+      url.pathname.includes("/credentials/") &&
+      url.pathname.endsWith("/revoke")
+    ) {
+      const parts = url.pathname.split("/");
+      const agentId = parts[2];
+      const credentialId = parts[4];
+
+      if (!agentId || !credentialId) {
+        sendError(response, 400, "agentId and credentialId are required");
+        return;
+      }
+
+      const credential = await revokeAgentCredential({ agentId, credentialId });
+      sendJson(response, 200, { credential });
       return;
     }
 

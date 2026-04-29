@@ -103,6 +103,20 @@ curl -s -X POST http://localhost:3001/agents/register \
 
 The response includes `credential.token`. Save it securely; Fundz stores only its hash and will not be able to show the same token again.
 
+Manage agent tokens:
+
+```bash
+curl -s http://localhost:3001/agents/<agentId>/credentials
+
+curl -s -X POST http://localhost:3001/agents/<agentId>/credentials \
+  -H 'content-type: application/json' \
+  -d '{ "label": "agent-runtime" }'
+
+curl -s -X POST http://localhost:3001/agents/<agentId>/credentials/<credentialId>/revoke
+```
+
+Credential list responses never include token secrets. Revoked tokens can no longer submit intents.
+
 Get policy:
 
 ```bash
@@ -151,6 +165,9 @@ Available tools:
 - `authenticate_agent`
 - `get_policy`
 - `submit_intent` (requires `FUNDZ_AGENT_TOKEN` in the MCP server environment)
+- `issue_agent_token`
+- `list_agent_tokens`
+- `revoke_agent_token`
 - `get_metrics`
 
 The MCP server is a thin facade over `packages/core`; it does not contain policy or execution logic.
