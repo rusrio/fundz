@@ -1,21 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
-import { Activity, ArrowRightLeft, RefreshCw, ShieldCheck, WalletCards } from "lucide-react";
-import type { Agent, Execution, StoredIntent } from "@fundz/shared";
+import type { Agent, Execution, Policy, RegisterAgentResponse, StoredIntent } from "@fundz/shared";
+import { Dashboard } from "./components/Dashboard.js";
+import { Landing } from "./components/Landing.js";
+import { apiRequest } from "./lib/api.js";
+import { computePerformance, isAddress } from "./lib/format.js";
+import type { DashboardSnapshot, EthereumProvider, WalletState } from "./types.js";
 import "./styles.css";
 
-type DashboardSnapshot = {
-  agents: Agent[];
-  intents: StoredIntent[];
-  executions: Execution[];
-  metrics: {
-    agentCount: number;
-    intentCount: number;
-    executionCount: number;
-  };
-};
-
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+declare global {
+  interface Window {
+    ethereum?: EthereumProvider;
+  }
+}
 
 const emptySnapshot: DashboardSnapshot = {
   agents: [],
@@ -28,57 +25,150 @@ const emptySnapshot: DashboardSnapshot = {
   }
 };
 
-function shortAddress(value: string | null): string {
-  if (!value) {
-    return "Not linked";
-  }
-
-  return `${value.slice(0, 6)}...${value.slice(-4)}`;
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
-}
-
-function statusClass(status: string): string {
-  if (status.includes("approved") || status === "confirmed") {
-    return "status statusPositive";
-  }
-
-  if (status.includes("rejected") || status === "failed") {
-    return "status statusNegative";
-  }
-
-  return "status";
-}
-
 function App() {
+  const [view, setView] = useState<"landing" | "app">(() =>
+    window.location.pathname.includes("dashboard") ? "app" : "landing"
+  );
   const [snapshot, setSnapshot] = useState<DashboardSnapshot>(emptySnapshot);
-  const [isLoading, setIsLoading] = useState(true);
+  const [wallet, setWallet] = useState<WalletState>({ status: "idle", account: null, error: null });
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const [policy, setPolicy] = useState<Policy | null>(null);
+  const [agentName, setAgentName] = useState("Demo execution agent");
+  const [safeAddress, setSafeAddress] = useState("");
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isLinkingSafe, setIsLinkingSafe] = useState(false);
+  const [isSafeFunded, setIsSafeFunded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function loadDashboard() {
-    setIsLoading(true);
+    setIsLoadingDashboard(true);
     setError(null);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/dashboard`);
+      setSnapshot(await apiRequest<DashboardSnapshot>("/dashboard"));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard");
+    } finally {
+      setIsLoadingDashboard(false);
+    }
+  }
 
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+  async function loadPolicy(agentId: string) {
+    try {
+      const response = await apiRequest<{ policy: Policy }>(`/agents/${agentId}/policy`);
+      setPolicy(response.policy);
+    } catch {
+      setPolicy(null);
+    }
+  }
+
+  async function authenticate(ownerAddress: string) {
+    const response = await apiRequest<{ agent: Agent | null }>("/agents/authenticate", {
+      method: "POST",
+      body: JSON.stringify({ ownerAddress })
+    });
+
+    setAgent(response.agent);
+
+    if (response.agent) {
+      setAgentName(response.agent.name);
+      setSafeAddress(response.agent.safeAddress ?? "");
+      await loadPolicy(response.agent.id);
+    } else {
+      setPolicy(null);
+    }
+  }
+
+  async function connectWallet() {
+    setWallet({ status: "connecting", account: null, error: null });
+    setError(null);
+
+    if (!window.ethereum) {
+      setWallet({ status: "missing", account: null, error: "Install MetaMask, Rabby, or another EIP-1193 wallet." });
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const account = accounts[0] ?? null;
+
+      if (!account) {
+        throw new Error("Wallet did not return an account");
       }
 
-      setSnapshot((await response.json()) as DashboardSnapshot);
-    } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : "Unable to load dashboard";
-      setError(message);
+      setWallet({ status: "connected", account, error: null });
+      await authenticate(account);
+      setView("app");
+    } catch (connectError) {
+      setWallet({
+        status: "error",
+        account: null,
+        error: connectError instanceof Error ? connectError.message : "Wallet connection failed"
+      });
+    }
+  }
+
+  async function registerConnectedAgent(event: FormEvent) {
+    event.preventDefault();
+
+    if (!wallet.account) {
+      setError("Connect a wallet before registering an agent.");
+      return;
+    }
+
+    setIsRegistering(true);
+    setError(null);
+
+    try {
+      const result = await apiRequest<RegisterAgentResponse>("/agents/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: agentName,
+          ownerAddress: wallet.account,
+          ...(isAddress(safeAddress) ? { safeAddress } : {})
+        })
+      });
+
+      setAgent(result.agent);
+      setPolicy(result.policy);
+      setSafeAddress(result.agent.safeAddress ?? safeAddress);
+      await loadDashboard();
+    } catch (registerError) {
+      setError(registerError instanceof Error ? registerError.message : "Unable to register agent");
     } finally {
-      setIsLoading(false);
+      setIsRegistering(false);
+    }
+  }
+
+  async function linkSafe(event: FormEvent) {
+    event.preventDefault();
+
+    if (!agent) {
+      setError("Register an agent before linking a Safe.");
+      return;
+    }
+
+    if (!isAddress(safeAddress)) {
+      setError("Enter a valid 0x Safe address.");
+      return;
+    }
+
+    setIsLinkingSafe(true);
+    setError(null);
+
+    try {
+      const response = await apiRequest<{ agent: Agent }>(`/agents/${agent.id}/safe`, {
+        method: "POST",
+        body: JSON.stringify({ safeAddress })
+      });
+
+      setAgent(response.agent);
+      await Promise.all([loadDashboard(), loadPolicy(response.agent.id)]);
+    } catch (safeError) {
+      setError(safeError instanceof Error ? safeError.message : "Unable to link Safe");
+    } finally {
+      setIsLinkingSafe(false);
     }
   }
 
@@ -86,166 +176,65 @@ function App() {
     void loadDashboard();
   }, []);
 
-  const approvedIntentCount = useMemo(() => {
-    return snapshot.intents.filter((intent) => intent.status === "policy_approved").length;
-  }, [snapshot.intents]);
+  const selectedAgent = useMemo(() => {
+    if (agent) {
+      return agent;
+    }
 
-  const rejectedIntentCount = useMemo(() => {
-    return snapshot.intents.filter((intent) => intent.status === "policy_rejected").length;
-  }, [snapshot.intents]);
+    if (wallet.account) {
+      return snapshot.agents.find((candidate: Agent) => candidate.ownerAddress.toLowerCase() === wallet.account?.toLowerCase()) ?? null;
+    }
 
-  const latestExecution = snapshot.executions[0];
+    return null;
+  }, [agent, snapshot.agents, wallet.account]);
+
+  const performance = useMemo(() => computePerformance(selectedAgent, snapshot), [selectedAgent, snapshot]);
+  const agentIntents = selectedAgent ? snapshot.intents.filter((intent: StoredIntent) => intent.agentId === selectedAgent.id) : [];
+  const agentExecutions = selectedAgent ? snapshot.executions.filter((execution: Execution) => execution.agentId === selectedAgent.id) : [];
+  const latestExecution = agentExecutions[0] ?? snapshot.executions[0];
+  const checklist = [
+    { label: "Wallet connected", complete: wallet.status === "connected" },
+    { label: "Agent registered", complete: Boolean(agent) },
+    { label: "Existing Safe linked", complete: Boolean(agent?.safeAddress) },
+    { label: "Policy active", complete: Boolean(policy) },
+    { label: "Safe funded by manual deposit", complete: isSafeFunded },
+    { label: "Signed intent respects allowlist, amount, cooldown, and daily limit", complete: Boolean(policy) }
+  ];
+  const readyForCapitalAccess = checklist.every((item) => item.complete);
+
+  if (view === "landing") {
+    return <Landing onLaunch={() => setView("app")} onConnect={() => void connectWallet()} wallet={wallet} />;
+  }
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Fundz control plane</p>
-          <h1>Agent execution dashboard</h1>
-        </div>
-        <button className="refreshButton" type="button" onClick={() => void loadDashboard()} disabled={isLoading}>
-          <RefreshCw size={16} aria-hidden="true" />
-          Refresh
-        </button>
-      </header>
-
-      {error ? <div className="errorBanner">API unavailable: {error}</div> : null}
-
-      <section className="metricsGrid" aria-label="Dashboard metrics">
-        <Metric icon={<WalletCards size={18} />} label="Agents" value={snapshot.metrics.agentCount} />
-        <Metric icon={<ShieldCheck size={18} />} label="Approved intents" value={approvedIntentCount} />
-        <Metric icon={<Activity size={18} />} label="Rejected intents" value={rejectedIntentCount} />
-        <Metric icon={<ArrowRightLeft size={18} />} label="Executions" value={snapshot.metrics.executionCount} />
-      </section>
-
-      <section className="workspace">
-        <div className="primaryColumn">
-          <TableHeader title="Agents" count={snapshot.agents.length} />
-          <div className="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Owner</th>
-                  <th>Safe</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.agents.map((agent) => (
-                  <tr key={agent.id}>
-                    <td>
-                      <strong>{agent.name}</strong>
-                      <span>{agent.id}</span>
-                    </td>
-                    <td>{shortAddress(agent.ownerAddress)}</td>
-                    <td>{shortAddress(agent.safeAddress)}</td>
-                    <td>
-                      <span className={statusClass(agent.status)}>{agent.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <TableHeader title="Intents" count={snapshot.intents.length} />
-          <div className="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nonce</th>
-                  <th>Route</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.intents.map((intent) => (
-                  <tr key={intent.id}>
-                    <td>
-                      <strong>{intent.nonce}</strong>
-                      <span>{intent.rejectionReason ?? "No rejection reason"}</span>
-                    </td>
-                    <td>
-                      {shortAddress(intent.tokenIn)} to {shortAddress(intent.tokenOut)}
-                    </td>
-                    <td>{intent.amountIn}</td>
-                    <td>
-                      <span className={statusClass(intent.status)}>{intent.status}</span>
-                    </td>
-                    <td>{formatDate(intent.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <aside className="sidePanel">
-          <TableHeader title="Executions" count={snapshot.executions.length} />
-          {latestExecution ? (
-            <div className="executionFocus">
-              <span className={statusClass(latestExecution.status)}>{latestExecution.status}</span>
-              <h2>{shortAddress(latestExecution.safeAddress)}</h2>
-              <dl>
-                <div>
-                  <dt>Adapter</dt>
-                  <dd>{latestExecution.adapter}</dd>
-                </div>
-                <div>
-                  <dt>Amount in</dt>
-                  <dd>{latestExecution.amountIn}</dd>
-                </div>
-                <div>
-                  <dt>Amount out</dt>
-                  <dd>{latestExecution.amountOut ?? "Pending"}</dd>
-                </div>
-                <div>
-                  <dt>Tx hash</dt>
-                  <dd>{latestExecution.txHash ? shortAddress(latestExecution.txHash) : "Not submitted"}</dd>
-                </div>
-              </dl>
-              <p>{latestExecution.errorMessage ?? "Execution ready."}</p>
-            </div>
-          ) : (
-            <div className="emptyState">No executions yet.</div>
-          )}
-
-          <div className="executionList">
-            {snapshot.executions.slice(0, 8).map((execution) => (
-              <div className="executionRow" key={execution.id}>
-                <div>
-                  <strong>{execution.adapter}</strong>
-                  <span>{formatDate(execution.createdAt)}</span>
-                </div>
-                <span className={statusClass(execution.status)}>{execution.status}</span>
-              </div>
-            ))}
-          </div>
-        </aside>
-      </section>
-    </main>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="metric">
-      <div className="metricIcon">{icon}</div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function TableHeader({ title, count }: { title: string; count: number }) {
-  return (
-    <div className="tableHeader">
-      <h2>{title}</h2>
-      <span>{count}</span>
-    </div>
+    <Dashboard
+      snapshot={snapshot}
+      wallet={wallet}
+      agent={agent}
+      policy={policy}
+      selectedAgent={selectedAgent}
+      performance={performance}
+      agentIntents={agentIntents}
+      agentExecutions={agentExecutions}
+      latestExecution={latestExecution}
+      checklist={checklist}
+      readyForCapitalAccess={readyForCapitalAccess}
+      agentName={agentName}
+      safeAddress={safeAddress}
+      isLoadingDashboard={isLoadingDashboard}
+      isRegistering={isRegistering}
+      isLinkingSafe={isLinkingSafe}
+      isSafeFunded={isSafeFunded}
+      error={error}
+      setView={setView}
+      setAgentName={setAgentName}
+      setSafeAddress={setSafeAddress}
+      setIsSafeFunded={setIsSafeFunded}
+      loadDashboard={() => void loadDashboard()}
+      connectWallet={() => void connectWallet()}
+      registerConnectedAgent={(event: FormEvent) => void registerConnectedAgent(event)}
+      linkSafe={(event: FormEvent) => void linkSafe(event)}
+    />
   );
 }
 
