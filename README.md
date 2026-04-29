@@ -2,7 +2,7 @@
 
 Fundz is a policy-enforced execution layer for AI agents.
 
-An external agent produces a signed intent. Fundz authenticates the agent, evaluates policy, prepares execution through the agent's Safe, and uses the backend-only Uniswap adapter for quotes. The current MVP records prepared executions; real on-chain Safe execution is intentionally left for the next phase.
+An external agent submits an intent. Fundz authenticates the agent, evaluates policy, requests backend-only Uniswap quote/swap calldata, and executes the swap through the agent's Safe. For the MVP, execution is run against a Tenderly Virtual TestNet fork of Ethereum mainnet so Uniswap liquidity is real while no transaction is sent to mainnet.
 
 This repository is organized as a TypeScript monorepo:
 
@@ -30,7 +30,7 @@ Set `UNISWAP_API_KEY` in `.env` to enable real Uniswap quotes. Without it, appro
 
 For the MVP, use a Tenderly Virtual TestNet forked from Ethereum mainnet instead of a public testnet. This keeps `chainId: 1` and gives the demo access to real Uniswap liquidity without sending transactions to mainnet.
 
-Create a mainnet Virtual TestNet in Tenderly, then configure `.env`:
+Create a mainnet Virtual TestNet in Tenderly, then configure `.env`. Use the Admin RPC for `TENDERLY_VNET_RPC_URL` because the demo preparation script needs Tenderly admin methods to set test balances.
 
 ```bash
 TENDERLY_VNET_RPC_URL="<your Tenderly VNet RPC URL>"
@@ -47,7 +47,7 @@ DEMO_MAX_AMOUNT_PER_OPERATION="1000000000"
 DEMO_DAILY_LIMIT="5000000000"
 ```
 
-Prepare the fork state and check balances:
+Prepare the fork state, check balances, and approve Uniswap spending:
 
 ```bash
 pnpm demo:tenderly:prepare
@@ -65,6 +65,8 @@ pnpm demo:tenderly:swap
 ```
 
 The API still evaluates the same Fundz policy. If approved, it requests a Uniswap quote/swap payload and executes it through Safe ProtocolKit against the Tenderly VNet RPC.
+
+For repeat demos on a fresh VNet, run `prepare`, `balances`, and `approve` before submitting the swap. If the Safe or token deployment happened after the VNet was created, recreate the VNet from a later mainnet block so the fork includes those contracts.
 
 ## Run The Demo
 
@@ -102,7 +104,7 @@ Get policy:
 curl -s http://localhost:3001/agents/<agentId>/policy
 ```
 
-Submit a signed intent:
+Submit an intent:
 
 ```bash
 curl -s -X POST http://localhost:3001/intents \
@@ -122,6 +124,8 @@ curl -s -X POST http://localhost:3001/intents \
 ```
 
 Each `(agentId, nonce)` pair is unique. Change `nonce` for repeat tests.
+
+The `signature` field is currently stored and format-validated only. Cryptographic intent signature verification is still outside the MVP.
 
 ## MCP
 
@@ -157,7 +161,7 @@ The minimum policy engine enforces:
 - daily limit
 - deadline
 
-Approved intents create a Uniswap execution record. Rejected intents store policy reasons.
+Approved intents create a Uniswap execution record. If Safe execution is configured, Fundz submits the swap through the Safe and waits for the transaction receipt. Rejected intents store policy reasons.
 
 ## Current MVP Boundaries
 
@@ -169,12 +173,15 @@ Included:
 - MCP facade
 - dashboard
 - Safe address linking
-- Uniswap quote preparation from the backend
+- Uniswap quote and swap calldata preparation from the backend
+- Safe transaction submission on Tenderly mainnet forks
+- Tenderly demo scripts for funding, approvals, balance checks, and swap submission
+- receipt-aware Safe execution failure handling
 
 Not included yet:
 
-- real Safe transaction submission
 - cryptographic signature verification
 - editable policies in the dashboard
 - production auth
 - multi-protocol adapters
+- production-grade execution monitoring and reconciliation
