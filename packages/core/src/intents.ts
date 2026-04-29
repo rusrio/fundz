@@ -4,8 +4,12 @@ import { toStoredIntent } from "./mappers.js";
 import { prepareUniswapExecution } from "./execution.js";
 import { evaluateIntentPolicy } from "./policy-engine.js";
 
-export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
+export async function submitIntent(input: SignedIntent, authenticatedAgentId?: string): Promise<StoredIntent> {
   const intent = signedIntentSchema.parse(input);
+
+  if (authenticatedAgentId && authenticatedAgentId !== intent.agentId) {
+    throw new Error("Agent token does not match intent agentId");
+  }
 
   const agent = await prisma.agent.findUnique({
     where: { id: intent.agentId },
@@ -20,6 +24,14 @@ export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
     throw new Error("Policy not found");
   }
 
+  if (agent.status !== "ACTIVE") {
+    throw new Error("Agent is disabled");
+  }
+
+  if (!agent.safeAddress) {
+    throw new Error("Agent Safe is not linked");
+  }
+
   const record = await prisma.intent.create({
     data: {
       agentId: intent.agentId,
@@ -31,7 +43,7 @@ export async function submitIntent(input: SignedIntent): Promise<StoredIntent> {
       amountIn: intent.amountIn,
       maxSlippageBps: intent.maxSlippageBps,
       deadline: new Date(intent.deadline),
-      signature: intent.signature,
+      signature: intent.signature ?? "",
       status: "RECEIVED"
     }
   });

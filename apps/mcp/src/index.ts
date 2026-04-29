@@ -19,6 +19,7 @@ if (repoEnvPath !== envPath && existsSync(repoEnvPath)) {
 }
 
 const {
+  authenticateAgentToken,
   authenticateAgent,
   getDashboardSnapshot,
   getPolicy,
@@ -75,11 +76,18 @@ server.registerTool(
   "submit_intent",
   {
     title: "Submit Intent",
-    description: "Submit a signed Uniswap swap intent for Fundz policy evaluation.",
+    description: "Submit a Uniswap swap intent for Fundz policy evaluation. The MCP server authenticates using FUNDZ_AGENT_TOKEN.",
     inputSchema: signedIntentSchema
   },
   async (intent) => {
-    const storedIntent = await submitIntent(intent);
+    const token = process.env.FUNDZ_AGENT_TOKEN;
+
+    if (!token) {
+      throw new Error("FUNDZ_AGENT_TOKEN is required for submit_intent");
+    }
+
+    const agent = await authenticateAgentToken(token);
+    const storedIntent = await submitIntent(intent, agent.id);
     return jsonContent({ intent: storedIntent });
   }
 );

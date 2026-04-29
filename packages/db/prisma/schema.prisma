@@ -28,6 +28,11 @@ enum ExecutionStatus {
   FAILED
 }
 
+enum AgentCredentialStatus {
+  ACTIVE
+  REVOKED
+}
+
 model Agent {
   id           String   @id @default(uuid())
   name         String
@@ -38,8 +43,25 @@ model Agent {
   updatedAt    DateTime @updatedAt
 
   policy     Policy?
+  credentials AgentCredential[]
   intents    Intent[]
   executions Execution[]
+}
+
+model AgentCredential {
+  id         String                @id @default(uuid())
+  agentId    String
+  tokenHash  String                @unique
+  label      String?
+  status     AgentCredentialStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, status])
 }
 
 model Policy {

@@ -3,8 +3,7 @@ import {
   addressSchema,
   amountSchema,
   chainIdSchema,
-  isoDateTimeSchema,
-  signatureSchema
+  isoDateTimeSchema
 } from "./common.js";
 
 export const intentActionSchema = z.literal("uniswap.swap");
@@ -22,7 +21,7 @@ export const unsignedIntentSchema = z.object({
 });
 
 export const signedIntentSchema = unsignedIntentSchema.extend({
-  signature: signatureSchema
+  signature: z.string().regex(/^0x[a-fA-F0-9]+$/, "Expected a hex signature").optional()
 });
 
 export const intentStatusSchema = z.enum([
@@ -34,8 +33,9 @@ export const intentStatusSchema = z.enum([
   "failed"
 ]);
 
-export const storedIntentSchema = signedIntentSchema.extend({
+export const storedIntentSchema = unsignedIntentSchema.extend({
   id: z.string().uuid(),
+  signature: z.string().nullable(),
   status: intentStatusSchema,
   rejectionReason: z.string().nullable(),
   createdAt: isoDateTimeSchema,

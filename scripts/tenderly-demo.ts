@@ -178,10 +178,13 @@ async function showBalances() {
   printBalance("Safe token units", safeToken);
 }
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
+async function postJson<T>(url: string, body: unknown, token?: string): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {})
+    },
     body: JSON.stringify(body)
   });
 
@@ -196,6 +199,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 
 async function submitSwap() {
   const apiUrl = env("FUNDZ_API_URL", process.env.VITE_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
+  const existingToken = process.env.FUNDZ_AGENT_TOKEN;
   const ownerAddress = envAddress("DEMO_OWNER_ADDRESS", "0x1111111111111111111111111111111111111111");
   const safeAddress = envAddress("DEMO_SAFE_ADDRESS", "0x2222222222222222222222222222222222222222");
   const tokenIn = envAddress("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
@@ -203,11 +207,16 @@ async function submitSwap() {
   const amountIn = env("DEMO_AMOUNT_IN", "1000000");
   const maxSlippageBps = Number(env("DEMO_MAX_SLIPPAGE_BPS", "50"));
 
-  const registration = await postJson<{ agent: { id: string } }>(`${apiUrl}/agents/register`, {
+  const registration = await postJson<{ agent: { id: string }; credential?: { token: string } }>(`${apiUrl}/agents/register`, {
     name: "Tenderly Demo Agent",
     ownerAddress,
     safeAddress
   });
+  const agentToken = existingToken && existingToken.length > 0 ? existingToken : registration.credential?.token;
+
+  if (!agentToken) {
+    throw new Error("FUNDZ_AGENT_TOKEN is required when registration does not return a credential");
+  }
 
   const deadline = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   const intent = await postJson<unknown>(`${apiUrl}/intents`, {
@@ -219,9 +228,8 @@ async function submitSwap() {
     tokenOut,
     amountIn,
     maxSlippageBps,
-    deadline,
-    signature: "0xabcdef"
-  });
+    deadline
+  }, agentToken);
 
   console.log(JSON.stringify(intent, null, 2));
 }

@@ -24,7 +24,7 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown) {
     "content-type": "application/json; charset=utf-8",
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "authorization,content-type"
   });
   response.end(JSON.stringify(body));
 }
@@ -49,14 +49,26 @@ function routeKey(request: IncomingMessage): string {
   return `${request.method ?? "GET"} ${url.pathname}`;
 }
 
+function bearerToken(request: IncomingMessage): string | null {
+  const authorization = request.headers.authorization;
+
+  if (!authorization?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return authorization.slice("Bearer ".length).trim();
+}
+
 const handlers: Record<string, Handler> = {
 };
 
 const {
+  authenticateAgentToken,
   authenticateAgent,
   getAgentSafe,
   getDashboardSnapshot,
   getPolicy,
+  issueAgentCredential,
   linkAgentSafe,
   registerAgent,
   submitIntent
@@ -68,7 +80,15 @@ handlers["GET /health"] = async (_request, response) => {
 
 handlers["POST /agents/register"] = async (request, response) => {
   const result = await registerAgent((await readJson(request)) as never);
-  sendJson(response, 201, result);
+  const credential = await issueAgentCredential({
+    agentId: result.agent.id,
+    label: "default"
+  });
+
+  sendJson(response, 201, {
+    ...result,
+    credential
+  });
 };
 
 handlers["POST /agents/authenticate"] = async (request, response) => {
@@ -88,7 +108,15 @@ handlers["GET /dashboard"] = async (_request, response) => {
 };
 
 handlers["POST /intents"] = async (request, response) => {
-  const intent = await submitIntent((await readJson(request)) as never);
+  const token = bearerToken(request);
+
+  if (!token) {
+    sendError(response, 401, "Bearer agent token is required");
+    return;
+  }
+
+  const agent = await authenticateAgentToken(token);
+  const intent = await submitIntent((await readJson(request)) as never, agent.id);
   sendJson(response, 201, { intent });
 };
 

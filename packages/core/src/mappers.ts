@@ -124,7 +124,7 @@ export function toStoredIntent(record: IntentRecord): StoredIntent {
     amountIn: record.amountIn,
     maxSlippageBps: record.maxSlippageBps,
     deadline: toIsoDate(record.deadline),
-    signature: record.signature,
+    signature: record.signature.length > 0 ? record.signature : null,
     status: intentStatusMap[record.status],
     rejectionReason: record.rejectionReason,
     createdAt: toIsoDate(record.createdAt),

@@ -38,6 +38,7 @@ SAFE_RPC_URL="<same Tenderly VNet RPC URL>"
 SAFE_EXECUTOR_PRIVATE_KEY="<private key for a Safe signer on the fork>"
 SAFE_EXECUTOR_ADDRESS="<address for that private key>"
 SAFE_EXECUTION_GAS_LIMIT="3000000"
+FUNDZ_AGENT_TOKEN="<optional existing agent token>"
 DEMO_OWNER_ADDRESS="<demo agent owner>"
 DEMO_SAFE_ADDRESS="<existing Safe address on mainnet/fork>"
 DEMO_TOKEN_IN="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -46,6 +47,8 @@ DEMO_AMOUNT_IN="1000000"
 DEMO_MAX_AMOUNT_PER_OPERATION="1000000000"
 DEMO_DAILY_LIMIT="5000000000"
 ```
+
+Fundz authenticates agent calls with bearer tokens. `POST /agents/register` returns a credential token once; store it as `FUNDZ_AGENT_TOKEN` for repeat runs. The token is stored only as a hash in the database.
 
 Prepare the fork state, check balances, and approve Uniswap spending:
 
@@ -98,6 +101,8 @@ curl -s -X POST http://localhost:3001/agents/register \
   }'
 ```
 
+The response includes `credential.token`. Save it securely; Fundz stores only its hash and will not be able to show the same token again.
+
 Get policy:
 
 ```bash
@@ -109,6 +114,7 @@ Submit an intent:
 ```bash
 curl -s -X POST http://localhost:3001/intents \
   -H 'content-type: application/json' \
+  -H 'authorization: Bearer <agentToken>' \
   -d '{
     "agentId": "<agentId>",
     "nonce": "demo-1",
@@ -118,14 +124,13 @@ curl -s -X POST http://localhost:3001/intents \
     "tokenOut": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "amountIn": "1000000",
     "maxSlippageBps": 50,
-    "deadline": "2026-12-31T00:00:00.000Z",
-    "signature": "0xabcdef"
+    "deadline": "2026-12-31T00:00:00.000Z"
   }'
 ```
 
 Each `(agentId, nonce)` pair is unique. Change `nonce` for repeat tests.
 
-The `signature` field is currently stored and format-validated only. Cryptographic intent signature verification is still outside the MVP.
+Fundz verifies the bearer token before policy evaluation. The token must belong to the same `agentId` included in the intent.
 
 ## MCP
 
@@ -145,7 +150,7 @@ Available tools:
 
 - `authenticate_agent`
 - `get_policy`
-- `submit_intent`
+- `submit_intent` (requires `FUNDZ_AGENT_TOKEN` in the MCP server environment)
 - `get_metrics`
 
 The MCP server is a thin facade over `packages/core`; it does not contain policy or execution logic.
