@@ -1,5 +1,5 @@
 import { prisma } from "@fundz/db";
-import { linkExistingSafe } from "@fundz/safe-kit";
+import { linkExistingSafe, normalizeSafeAddress } from "@fundz/safe-kit";
 import {
   type Agent,
   type Policy,
@@ -15,7 +15,9 @@ function envValue(name: string, fallback: string): string {
 
 const defaultAllowedTokens = [
   envValue("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-  envValue("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
+  envValue("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+  envValue("DEMO_TOKEN_WBTC", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
+  envValue("DEMO_TOKEN_UNI", "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984")
 ];
 
 const defaultPolicy = {
@@ -26,28 +28,36 @@ const defaultPolicy = {
   dailyLimit: envValue("DEMO_DAILY_LIMIT", "5000000000")
 };
 
+function protocolFundedSafeAddress(): string {
+  return normalizeSafeAddress(envValue(
+    "FUNDZ_FUNDED_SAFE_ADDRESS",
+    envValue("DEMO_SAFE_ADDRESS", "0x2222222222222222222222222222222222222222")
+  ));
+}
+
 export async function registerAgent(input: RegisterAgentRequest): Promise<{
   agent: Agent;
   policy: Policy;
 }> {
   const request = registerAgentRequestSchema.parse(input);
+  const safeAddress = protocolFundedSafeAddress();
 
   const agent = await prisma.agent.upsert({
     where: { ownerAddress: request.ownerAddress },
     update: {
       name: request.name,
-      safeAddress: request.safeAddress
+      safeAddress
     },
     create: {
       name: request.name,
       ownerAddress: request.ownerAddress,
-      safeAddress: request.safeAddress
+      safeAddress
     }
   });
 
   const policy = await prisma.policy.upsert({
     where: { agentId: agent.id },
-    update: {},
+    update: defaultPolicy,
     create: {
       agentId: agent.id,
       ...defaultPolicy
