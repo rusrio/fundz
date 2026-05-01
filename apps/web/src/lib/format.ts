@@ -38,6 +38,11 @@ export function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+export function formatSignedBps(value: number): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${(value / 100).toFixed(2)}%`;
+}
+
 export function computePerformance(agent: Agent | null, snapshot: DashboardSnapshot): AgentPerformance {
   if (!agent) {
     return {

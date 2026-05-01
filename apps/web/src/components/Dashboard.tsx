@@ -1,20 +1,20 @@
 import { motion } from "framer-motion";
 import type { FormEvent } from "react";
 import {
-  Activity,
-  AlertCircle,
   ArrowRightLeft,
   CheckCircle2,
   CircleDot,
+  Layers3,
   KeyRound,
   LockKeyhole,
   RefreshCw,
   ShieldCheck,
+  TrendingUp,
   WalletCards
 } from "lucide-react";
 import type { Agent, Execution, Policy, StoredIntent } from "@fundz/shared";
-import { isAddress, shortAddress, statusClass } from "../lib/format.js";
-import type { AgentPerformance, DashboardSnapshot, ReadinessItem, WalletState } from "../types.js";
+import { formatSignedBps, shortAddress, statusClass } from "../lib/format.js";
+import type { AgentPerformance, DashboardSnapshot, PortfolioDashboardState, ReadinessItem, RiskDashboardState, WalletState } from "../types.js";
 import { AgentTable, BrandMark, IntentTable, Metric, SectionHeader, Stat } from "./ui.js";
 
 type DashboardProps = {
@@ -27,23 +27,19 @@ type DashboardProps = {
   agentIntents: StoredIntent[];
   agentExecutions: Execution[];
   latestExecution: Execution | undefined;
+  selectedRiskState: RiskDashboardState | null;
+  selectedPortfolioState: PortfolioDashboardState | null;
   checklist: ReadinessItem[];
   readyForCapitalAccess: boolean;
   agentName: string;
-  safeAddress: string;
   isLoadingDashboard: boolean;
   isRegistering: boolean;
-  isLinkingSafe: boolean;
-  isSafeFunded: boolean;
   error: string | null;
   setView: (view: "landing" | "app") => void;
   setAgentName: (value: string) => void;
-  setSafeAddress: (value: string) => void;
-  setIsSafeFunded: (value: boolean) => void;
   loadDashboard: () => void;
   connectWallet: () => void;
   registerConnectedAgent: (event: FormEvent) => void;
-  linkSafe: (event: FormEvent) => void;
 };
 
 export function Dashboard({
@@ -56,23 +52,19 @@ export function Dashboard({
   agentIntents,
   agentExecutions,
   latestExecution,
+  selectedRiskState,
+  selectedPortfolioState,
   checklist,
   readyForCapitalAccess,
   agentName,
-  safeAddress,
   isLoadingDashboard,
   isRegistering,
-  isLinkingSafe,
-  isSafeFunded,
   error,
   setView,
   setAgentName,
-  setSafeAddress,
-  setIsSafeFunded,
   loadDashboard,
   connectWallet,
-  registerConnectedAgent,
-  linkSafe
+  registerConnectedAgent
 }: DashboardProps) {
   return (
     <main className="appShell">
@@ -105,7 +97,7 @@ export function Dashboard({
           <p>
             {selectedAgent
               ? `Owner ${shortAddress(selectedAgent.ownerAddress)} manages policy-scoped execution from ${shortAddress(selectedAgent.safeAddress)}.`
-              : "Connect a wallet, register an agent, and link a funded Safe before signed intents can reach execution."}
+              : "Connect a wallet and register an agent. Fundz assigns the funded Safe before signed intents can reach execution."}
           </p>
         </div>
         <div className={readyForCapitalAccess ? "readiness ready" : "readiness"}>
@@ -144,47 +136,103 @@ export function Dashboard({
                 </button>
               </form>
 
-              <form className="stepBlock" onSubmit={linkSafe}>
+              <div className="stepBlock">
                 <div className="stepIcon">
                   <LockKeyhole size={18} aria-hidden="true" />
                 </div>
-                <h3>Link Safe</h3>
-                <label>
-                  Safe address
-                  <input value={safeAddress} onChange={(event) => setSafeAddress(event.target.value)} placeholder="0x..." />
-                </label>
-                <button className="secondaryButton" type="submit" disabled={isLinkingSafe || !agent || !isAddress(safeAddress)}>
-                  {isLinkingSafe ? "Linking..." : "Link existing Safe"}
-                </button>
-              </form>
+                <h3>Funded Safe</h3>
+                <p>Fundz assigns the funded Safe automatically when the agent is registered.</p>
+                <div className="assignedSafe">
+                  <span>Assigned Safe</span>
+                  <strong>{shortAddress(agent?.safeAddress ?? null)}</strong>
+                </div>
+              </div>
             </div>
           </section>
 
           <section className="workspacePanel">
             <SectionHeader eyebrow="Performance" title="Selected agent" meta={<span>{performance.lastActivity}</span>} />
             <div className="metricsGrid">
-              <Metric icon={<Activity size={18} />} label="Intents" value={performance.totalIntents.toString()} />
-              <Metric icon={<ShieldCheck size={18} />} label="Approval rate" value={`${performance.approvalRate}%`} tone="positive" />
-              <Metric icon={<AlertCircle size={18} />} label="Rejected" value={performance.rejectedCount.toString()} />
-              <Metric icon={<ArrowRightLeft size={18} />} label="Amount in" value={performance.totalAmountIn} />
+              <Metric icon={<WalletCards size={18} />} label="Portfolio value" value={selectedPortfolioState?.totalValue ?? "0"} tone="positive" />
+              <Metric icon={<TrendingUp size={18} />} label="PnL" value={selectedPortfolioState ? `${selectedPortfolioState.pnl} (${formatSignedBps(selectedPortfolioState.pnlBps)})` : "0"} />
+              <Metric icon={<ShieldCheck size={18} />} label="Margin left" value={selectedRiskState?.lossBufferRemaining ?? "0"} tone="positive" />
+              <Metric icon={<ArrowRightLeft size={18} />} label="Trades" value={agentExecutions.length.toString()} />
             </div>
             <div className="executionStats">
-              <Stat label="Submitted" value={performance.executionsSubmitted} />
-              <Stat label="Pending" value={performance.executionsPending} />
+              <Stat label="Drawdown" value={selectedPortfolioState?.drawdown ?? "0"} />
+              <Stat label="Approval rate" value={`${performance.approvalRate}%`} />
               <Stat label="Failed" value={performance.executionsFailed} />
               <Stat label="Latest execution" value={performance.latestExecutionStatus} />
             </div>
           </section>
 
           <section className="workspacePanel">
+            <SectionHeader eyebrow="Portfolio" title="Open positions" meta={<span>{selectedPortfolioState?.positions.length ?? 0}</span>} />
+            {selectedPortfolioState?.error ? <div className="warningBanner inlineWarning">{selectedPortfolioState.error}</div> : null}
+            {selectedPortfolioState ? (
+              <div className="positionGrid">
+                {selectedPortfolioState.positions.map((position) => (
+                  <article className="positionTile" key={position.address}>
+                    <div>
+                      <span>{position.symbol}</span>
+                      <strong>{position.balance}</strong>
+                    </div>
+                    <small>{shortAddress(position.address)}</small>
+                    <dl>
+                      <div>
+                        <dt>USDC value</dt>
+                        <dd>{position.valueInBase}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="emptyState">No portfolio valuation yet.</div>
+            )}
+          </section>
+
+          <section className="workspacePanel">
+            <SectionHeader eyebrow="Demo flow" title="Live presentation track" meta={<span>{selectedAgent ? shortAddress(selectedAgent.ownerAddress) : "No agent"}</span>} />
+            <div className="flowTrack">
+              {[
+                ["Wallet", wallet.status === "connected"],
+                ["Agent", Boolean(agent)],
+                ["Credential", Boolean(agent)],
+                ["Safe", Boolean(agent?.safeAddress)],
+                ["Policy", Boolean(policy)],
+                ["Trades", agentExecutions.length > 0],
+                ["Risk", Boolean(selectedRiskState)],
+                ["Exit", Boolean(selectedRiskState?.latestEvent?.emergencyTxHash)]
+              ].map(([label, complete]) => (
+                <div className={complete ? "flowNode complete" : "flowNode"} key={String(label)}>
+                  <span>{complete ? <CheckCircle2 size={15} aria-hidden="true" /> : <CircleDot size={15} aria-hidden="true" />}</span>
+                  <strong>{label}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="workspacePanel">
             <SectionHeader eyebrow="Activity" title="Agent intents" meta={<span>{agentIntents.length}</span>} />
-            <IntentTable intents={agentIntents.length > 0 ? agentIntents : snapshot.intents.slice(0, 6)} />
+            {selectedAgent ? (
+              <IntentTable intents={agentIntents} />
+            ) : (
+              <div className="emptyState">Connect the wallet that owns the agent to view its intents.</div>
+            )}
           </section>
         </div>
 
         <aside className="sideRail">
           <section className="railPanel">
             <SectionHeader eyebrow="Capital access" title="Readiness" />
+            <div className="agentIdentity">
+              <Layers3 size={17} aria-hidden="true" />
+              <div>
+                <span>Agent public id</span>
+                <strong>{selectedAgent ? shortAddress(selectedAgent.ownerAddress) : "Not registered"}</strong>
+              </div>
+            </div>
             <div className="checklist">
               {checklist.map((item) => (
                 <div className={item.complete ? "checkItem complete" : "checkItem"} key={item.label}>
@@ -193,15 +241,6 @@ export function Dashboard({
                 </div>
               ))}
             </div>
-            <label className="fundingToggle">
-              <input
-                type="checkbox"
-                checked={isSafeFunded}
-                disabled={!agent?.safeAddress}
-                onChange={(event) => setIsSafeFunded(event.target.checked)}
-              />
-              Manual Safe deposit confirmed
-            </label>
           </section>
 
           <section className="railPanel">
@@ -230,8 +269,50 @@ export function Dashboard({
             )}
           </section>
 
+          <section className="railPanel">
+            <SectionHeader
+              eyebrow="Risk budget"
+              title={selectedRiskState ? (selectedRiskState.breached ? "Emergency threshold hit" : "Protected capital") : "No risk policy"}
+              meta={selectedRiskState ? <span className={selectedRiskState.breached ? statusClass("failed") : statusClass("active")}>{selectedRiskState.breached ? "breached" : "active"}</span> : undefined}
+            />
+            {selectedRiskState ? (
+              <dl className="policyList">
+                <div>
+                  <dt>Fundz capital</dt>
+                  <dd>{selectedRiskState.protocolCapital}</dd>
+                </div>
+                <div>
+                  <dt>Agent margin</dt>
+                  <dd>{selectedRiskState.agentLossMargin}</dd>
+                </div>
+                <div>
+                  <dt>Access fee</dt>
+                  <dd>{selectedRiskState.accessFee}</dd>
+                </div>
+                <div>
+                  <dt>Protected value</dt>
+                  <dd>{selectedRiskState.protectedValue}</dd>
+                </div>
+                <div>
+                  <dt>Current value</dt>
+                  <dd>{selectedRiskState.totalValue}</dd>
+                </div>
+                <div>
+                  <dt>Loss buffer left</dt>
+                  <dd>{selectedRiskState.lossBufferRemaining}</dd>
+                </div>
+                <div>
+                  <dt>Emergency tx</dt>
+                  <dd>{selectedRiskState.latestEvent?.emergencyTxHash ? shortAddress(selectedRiskState.latestEvent.emergencyTxHash) : "None"}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mutedText">Run the risk setup script to attach Fundz capital, agent margin, and emergency-exit limits.</p>
+            )}
+          </section>
+
           <section className="railPanel executionFocus">
-            <SectionHeader eyebrow="Execution" title="Latest" meta={<span>{agentExecutions.length || snapshot.executions.length}</span>} />
+            <SectionHeader eyebrow="Execution" title="Latest" meta={<span>{agentExecutions.length}</span>} />
             {latestExecution ? (
               <>
                 <span className={statusClass(latestExecution.status)}>{latestExecution.status}</span>
@@ -257,20 +338,20 @@ export function Dashboard({
                 <p>{latestExecution.errorMessage ?? "Execution is inside the Safe pipeline."}</p>
               </>
             ) : (
-              <div className="emptyState">No executions yet.</div>
+              <div className="emptyState">Connect the agent wallet or execute a trade to view the latest execution.</div>
             )}
           </section>
         </aside>
       </section>
 
       <section className="workspacePanel globalSection">
-        <SectionHeader eyebrow="Demo environment" title="Global snapshot" meta={<span>{snapshot.metrics.agentCount}</span>} />
+        <SectionHeader eyebrow="Wallet scope" title="Connected account snapshot" meta={<span>{selectedAgent ? "1" : "0"}</span>} />
         <div className="globalGrid">
-          <Metric icon={<WalletCards size={18} />} label="Agents" value={snapshot.metrics.agentCount.toString()} />
-          <Metric icon={<ShieldCheck size={18} />} label="Intents" value={snapshot.metrics.intentCount.toString()} />
-          <Metric icon={<ArrowRightLeft size={18} />} label="Executions" value={snapshot.metrics.executionCount.toString()} />
+          <Metric icon={<WalletCards size={18} />} label="Agents" value={selectedAgent ? "1" : "0"} />
+          <Metric icon={<ShieldCheck size={18} />} label="Intents" value={agentIntents.length.toString()} />
+          <Metric icon={<ArrowRightLeft size={18} />} label="Executions" value={agentExecutions.length.toString()} />
         </div>
-        <AgentTable agents={snapshot.agents} />
+        <AgentTable agents={selectedAgent ? [selectedAgent] : []} />
       </section>
     </main>
   );

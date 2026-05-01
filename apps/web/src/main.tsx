@@ -4,7 +4,7 @@ import type { Agent, Execution, Policy, RegisterAgentResponse, StoredIntent } fr
 import { Dashboard } from "./components/Dashboard.js";
 import { Landing } from "./components/Landing.js";
 import { apiRequest } from "./lib/api.js";
-import { computePerformance, isAddress } from "./lib/format.js";
+import { computePerformance } from "./lib/format.js";
 import type { DashboardSnapshot, EthereumProvider, WalletState } from "./types.js";
 import "./styles.css";
 
@@ -18,6 +18,8 @@ const emptySnapshot: DashboardSnapshot = {
   agents: [],
   intents: [],
   executions: [],
+  riskStates: [],
+  portfolioStates: [],
   metrics: {
     agentCount: 0,
     intentCount: 0,
@@ -34,11 +36,8 @@ function App() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [agentName, setAgentName] = useState("Demo execution agent");
-  const [safeAddress, setSafeAddress] = useState("");
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [isLinkingSafe, setIsLinkingSafe] = useState(false);
-  const [isSafeFunded, setIsSafeFunded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function loadDashboard() {
@@ -73,7 +72,6 @@ function App() {
 
     if (response.agent) {
       setAgentName(response.agent.name);
-      setSafeAddress(response.agent.safeAddress ?? "");
       await loadPolicy(response.agent.id);
     } else {
       setPolicy(null);
@@ -85,6 +83,8 @@ function App() {
     setError(null);
 
     if (!window.ethereum) {
+      setAgent(null);
+      setPolicy(null);
       setWallet({ status: "missing", account: null, error: "Install MetaMask, Rabby, or another EIP-1193 wallet." });
       return;
     }
@@ -101,6 +101,8 @@ function App() {
       await authenticate(account);
       setView("app");
     } catch (connectError) {
+      setAgent(null);
+      setPolicy(null);
       setWallet({
         status: "error",
         account: null,
@@ -125,50 +127,17 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           name: agentName,
-          ownerAddress: wallet.account,
-          ...(isAddress(safeAddress) ? { safeAddress } : {})
+          ownerAddress: wallet.account
         })
       });
 
       setAgent(result.agent);
       setPolicy(result.policy);
-      setSafeAddress(result.agent.safeAddress ?? safeAddress);
       await loadDashboard();
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : "Unable to register agent");
     } finally {
       setIsRegistering(false);
-    }
-  }
-
-  async function linkSafe(event: FormEvent) {
-    event.preventDefault();
-
-    if (!agent) {
-      setError("Register an agent before linking a Safe.");
-      return;
-    }
-
-    if (!isAddress(safeAddress)) {
-      setError("Enter a valid 0x Safe address.");
-      return;
-    }
-
-    setIsLinkingSafe(true);
-    setError(null);
-
-    try {
-      const response = await apiRequest<{ agent: Agent }>(`/agents/${agent.id}/safe`, {
-        method: "POST",
-        body: JSON.stringify({ safeAddress })
-      });
-
-      setAgent(response.agent);
-      await Promise.all([loadDashboard(), loadPolicy(response.agent.id)]);
-    } catch (safeError) {
-      setError(safeError instanceof Error ? safeError.message : "Unable to link Safe");
-    } finally {
-      setIsLinkingSafe(false);
     }
   }
 
@@ -191,13 +160,18 @@ function App() {
   const performance = useMemo(() => computePerformance(selectedAgent, snapshot), [selectedAgent, snapshot]);
   const agentIntents = selectedAgent ? snapshot.intents.filter((intent: StoredIntent) => intent.agentId === selectedAgent.id) : [];
   const agentExecutions = selectedAgent ? snapshot.executions.filter((execution: Execution) => execution.agentId === selectedAgent.id) : [];
-  const latestExecution = agentExecutions[0] ?? snapshot.executions[0];
+  const latestExecution = agentExecutions[0];
+  const selectedRiskState = selectedAgent
+    ? snapshot.riskStates.find((riskState) => riskState.agentId === selectedAgent.id) ?? null
+    : null;
+  const selectedPortfolioState = selectedAgent
+    ? snapshot.portfolioStates.find((portfolioState) => portfolioState.agentId === selectedAgent.id) ?? null
+    : null;
   const checklist = [
     { label: "Wallet connected", complete: wallet.status === "connected" },
     { label: "Agent registered", complete: Boolean(agent) },
-    { label: "Existing Safe linked", complete: Boolean(agent?.safeAddress) },
+    { label: "Fundz funded Safe assigned", complete: Boolean(agent?.safeAddress) },
     { label: "Policy active", complete: Boolean(policy) },
-    { label: "Safe funded by manual deposit", complete: isSafeFunded },
     { label: "Signed intent respects allowlist, amount, cooldown, and daily limit", complete: Boolean(policy) }
   ];
   const readyForCapitalAccess = checklist.every((item) => item.complete);
@@ -217,23 +191,19 @@ function App() {
       agentIntents={agentIntents}
       agentExecutions={agentExecutions}
       latestExecution={latestExecution}
+      selectedRiskState={selectedRiskState}
+      selectedPortfolioState={selectedPortfolioState}
       checklist={checklist}
       readyForCapitalAccess={readyForCapitalAccess}
       agentName={agentName}
-      safeAddress={safeAddress}
       isLoadingDashboard={isLoadingDashboard}
       isRegistering={isRegistering}
-      isLinkingSafe={isLinkingSafe}
-      isSafeFunded={isSafeFunded}
       error={error}
       setView={setView}
       setAgentName={setAgentName}
-      setSafeAddress={setSafeAddress}
-      setIsSafeFunded={setIsSafeFunded}
       loadDashboard={() => void loadDashboard()}
       connectWallet={() => void connectWallet()}
       registerConnectedAgent={(event: FormEvent) => void registerConnectedAgent(event)}
-      linkSafe={(event: FormEvent) => void linkSafe(event)}
     />
   );
 }
