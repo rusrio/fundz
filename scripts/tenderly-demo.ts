@@ -139,24 +139,28 @@ async function prepareTenderly() {
 async function approveTenderly() {
   const safeAddress = envAddress("DEMO_SAFE_ADDRESS", "0x2222222222222222222222222222222222222222");
   const tokenIn = envAddress("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+  const tokenOut = envAddress("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
   const permit2 = envAddress("UNISWAP_PERMIT2_ADDRESS", permit2Address);
   const universalRouter = envAddress("UNISWAP_UNIVERSAL_ROUTER_ADDRESS", universalRouterAddress);
+  const tokens = [...new Set([tokenIn, tokenOut])];
 
-  const erc20Approval = await executeSafeTransaction({
-    safeAddress,
-    to: tokenIn,
-    data: erc20ApproveData(permit2, maxUint256)
-  });
+  for (const token of tokens) {
+    const erc20Approval = await executeSafeTransaction({
+      safeAddress,
+      to: token,
+      data: erc20ApproveData(permit2, maxUint256)
+    });
 
-  console.log(`Approved Permit2 for token ${tokenIn}: ${erc20Approval.txHash}`);
+    console.log(`Approved Permit2 for token ${token}: ${erc20Approval.txHash}`);
 
-  const permit2Approval = await executeSafeTransaction({
-    safeAddress,
-    to: permit2,
-    data: permit2ApproveData(tokenIn, universalRouter, maxUint160, maxUint48)
-  });
+    const permit2Approval = await executeSafeTransaction({
+      safeAddress,
+      to: permit2,
+      data: permit2ApproveData(token, universalRouter, maxUint160, maxUint48)
+    });
 
-  console.log(`Approved Universal Router in Permit2: ${permit2Approval.txHash}`);
+    console.log(`Approved Universal Router in Permit2 for token ${token}: ${permit2Approval.txHash}`);
+  }
 }
 
 async function showBalances() {
@@ -164,6 +168,7 @@ async function showBalances() {
   const executorAddress = envAddress("SAFE_EXECUTOR_ADDRESS");
   const safeAddress = envAddress("DEMO_SAFE_ADDRESS", "0x2222222222222222222222222222222222222222");
   const tokenIn = envAddress("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+  const tokenOut = envAddress("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
 
   const executorEth = await rpc<string>(url, "eth_getBalance", [executorAddress, "latest"]);
   const safeToken = await rpc<string>(url, "eth_call", [
@@ -173,9 +178,17 @@ async function showBalances() {
     },
     "latest"
   ]);
+  const safeRiskToken = await rpc<string>(url, "eth_call", [
+    {
+      to: tokenOut,
+      data: balanceOfData(safeAddress)
+    },
+    "latest"
+  ]);
 
   printBalance("Executor ETH wei", executorEth);
-  printBalance("Safe token units", safeToken);
+  printBalance("Safe base token units", safeToken);
+  printBalance("Safe risk token units", safeRiskToken);
 }
 
 async function postJson<T>(url: string, body: unknown, token?: string): Promise<T> {
