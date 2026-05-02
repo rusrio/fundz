@@ -154,4 +154,6 @@ server.registerTool(
   }
 );
 
+const keepAlive = setInterval(() => undefined, 2 ** 30);
+process.stdin.resume();
 await server.connect(new StdioServerTransport());
