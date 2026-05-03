@@ -17,7 +17,7 @@
 
 ## What is Fundz?
 
-Fundz is a trust and execution layer between AI agents and DeFi. An AI agent submits a swap intent — via REST API or MCP — and Fundz handles everything else: authentication, policy enforcement, Uniswap quote fetching, and Safe transaction execution. The agent never constructs calldata or manages keys.
+Fundz is a trust and execution layer between AI agents and DeFi. An AI agent submits a swap intent via REST API or MCP, and Fundz handles everything else: authentication, policy enforcement, Uniswap quote fetching, and Safe transaction execution. The agent never constructs calldata or manages keys.
 
 Beyond execution gating, Fundz runs a continuous risk monitor that values each agent's Gnosis Safe using live Uniswap quotes. If the portfolio drops below a protected floor, Fundz automatically disables the agent, revokes all tokens, and exits the position back to the base asset.
 
@@ -34,9 +34,9 @@ Think of it as a prop firm model applied to AI agents: Fundz provides capital, s
           │ MCP tools                   │ POST /intents
           ▼                             ▼
 ┌─────────────────────────────────────────────────────┐
-│                   apps/api — Core API               │
+│                   apps/api - Core API               │
 │                                                     │
-│  Auth → Policy Engine → Uniswap Adapter → Safe Kit │
+│  Auth -> Policy Engine -> Uniswap Adapter -> Safe Kit│
 └────────────────────────┬────────────────────────────┘
                          │
           ┌──────────────┼──────────────┐
@@ -51,13 +51,13 @@ Think of it as a prop firm model applied to AI agents: Fundz provides capital, s
 
 | Package | Role |
 |---|---|
-| `apps/api` | Core API — auth, policy, intents, execution |
-| `apps/web` | React dashboard — portfolio, trades, risk, payout |
-| `apps/mcp` | MCP server facade — tool interface for AI clients |
-| `packages/core` | Domain logic — agents, policy, intents, execution |
+| `apps/api` | Core API - auth, policy, intents, execution |
+| `apps/web` | React dashboard - portfolio, trades, risk, payout |
+| `apps/mcp` | MCP server facade - tool interface for AI clients |
+| `packages/core` | Domain logic - agents, policy, intents, execution |
 | `packages/db` | Prisma + SQLite schema and access layer |
 | `packages/safe-kit` | Gnosis Safe ProtocolKit integration |
-| `packages/adapters/uniswap` | Uniswap Routing API — quote + swap calldata |
+| `packages/adapters/uniswap` | Uniswap Routing API - quote + swap calldata |
 | `packages/shared` | Shared types and Zod schemas |
 
 ---
@@ -90,7 +90,7 @@ curl -s -X POST http://localhost:3001/agents/register \
   }'
 ```
 
-Fundz assigns a Gnosis Safe automatically and returns a bearer token. Store it — Fundz only keeps the hash.
+Fundz assigns a Gnosis Safe automatically and returns a bearer token. Store it - Fundz only keeps the hash.
 
 ### 2. Submit an intent
 
@@ -111,7 +111,7 @@ curl -s -X POST http://localhost:3001/intents \
   }'
 ```
 
-Fundz authenticates the token, evaluates policy, fetches a Uniswap quote and Universal Router calldata, and executes the swap through the Safe. Each `(agentId, nonce)` pair is unique — change `nonce` for repeat tests.
+Fundz authenticates the token, evaluates policy, fetches a Uniswap quote and Universal Router calldata, and executes the swap through the Safe. Each `(agentId, nonce)` pair is unique - change `nonce` for repeat tests.
 
 ### 3. Via MCP
 
@@ -123,13 +123,13 @@ node /path/to/fundz/apps/mcp/dist/index.js
 
 Available tools: `authenticate_agent` · `submit_intent` · `get_policy` · `issue_agent_token` · `list_agent_tokens` · `revoke_agent_token` · `get_metrics`
 
-The MCP server is a thin facade over `packages/core` — it contains no policy or execution logic.
+The MCP server is a thin facade over `packages/core` - it contains no policy or execution logic.
 
 ---
 
 ## Tenderly Mainnet Fork
 
-The MVP runs on a Tenderly Virtual TestNet forked from Ethereum mainnet (`chainId: 1`). Same contract addresses, same Uniswap pools, same liquidity as mainnet — but no transactions hit mainnet.
+The MVP runs on a Tenderly Virtual TestNet forked from Ethereum mainnet (`chainId: 1`). Same contract addresses, same Uniswap pools, same liquidity as mainnet - but no transactions hit mainnet.
 
 ### Setup
 
@@ -164,12 +164,12 @@ pnpm demo:tenderly:swap      # submit a swap intent
 Fundz monitors each agent's Safe continuously:
 
 ```
-portfolio value = base token balance + uniswap_quote(risk token → base token)
+portfolio value = base token balance + uniswap_quote(risk token -> base token)
 protected floor = protocol capital + access fee
-loss buffer     = portfolio value − protected floor
+loss buffer     = portfolio value - protected floor
 ```
 
-When `portfolio value ≤ protected floor`:
+When `portfolio value <= protected floor`:
 
 1. Agent is disabled
 2. All bearer tokens are revoked
@@ -182,8 +182,8 @@ The emergency exit does not require agent cooperation. Fundz owns the execution 
 ### Simulate a market crash
 
 ```bash
-pnpm demo:risk:monitor           # terminal 1 — start monitor
-pnpm demo:tenderly:market-move   # terminal 2 — large directional swap on the VNet pool
+pnpm demo:risk:monitor           # terminal 1 - start monitor
+pnpm demo:tenderly:market-move   # terminal 2 - large directional swap on the VNet pool
 ```
 
 `market-move` uses Tenderly admin RPC to fund a test EOA and execute a real Universal Router swap via `cast` (Foundry), moving the pool price against the agent's position. Requires [Foundry](https://getfoundry.sh/).
@@ -211,7 +211,7 @@ Rejected intents are stored with the policy reason. Approved intents proceed to 
 pnpm dev:web   # http://localhost:3000
 ```
 
-Wallet-scoped — shows only the connected owner's agent:
+Wallet-scoped - shows only the connected owner's agent:
 
 - Safe address and status (active / disabled / emergency exit)
 - Policy allowlist
@@ -254,11 +254,11 @@ See [`.env.example`](./.env.example) for the full reference.
 ## MVP Boundaries
 
 **Included:**
-- TypeScript monorepo — `apps/` and `packages/`
+- TypeScript monorepo - `apps/` and `packages/`
 - SQLite + Prisma persistence
 - REST API + MCP server facade
 - React dashboard with wallet connection
-- Uniswap quote and swap calldata — server-side, agent never sees calldata
+- Uniswap quote and swap calldata - server-side, agent never sees calldata
 - Safe transaction submission on Tenderly mainnet forks
 - Receipt-aware execution failure handling
 - Risk monitor with bearer-token revocation and emergency Safe exit
