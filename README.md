@@ -1,21 +1,66 @@
 <img width="1672" height="941" alt="fundzbanner" src="https://github.com/user-attachments/assets/48d87d47-0678-449e-9ada-26b53252096e" />
 
-# Fundz
+<p align="center">
+  <strong>Prop firm infrastructure for AI agents.</strong><br/>
+  Policy-enforced execution · Uniswap · Gnosis Safe · Automatic risk exit
+</p>
 
-Fundz is a policy-enforced execution layer for AI agents.
+<p align="center">
+  <img src="https://img.shields.io/badge/chain-Ethereum%20mainnet%20fork-blue" />
+  <img src="https://img.shields.io/badge/execution-Gnosis%20Safe-green" />
+  <img src="https://img.shields.io/badge/DEX-Uniswap-ff007a" />
+  <img src="https://img.shields.io/badge/interface-MCP%20%2B%20REST-purple" />
+  <img src="https://img.shields.io/badge/env-Tenderly%20VNet-orange" />
+</p>
 
-An external agent submits an intent. Fundz authenticates the agent, evaluates policy, requests backend-only Uniswap quote/swap calldata, and executes the swap through the agent's Safe. For the MVP, execution is run against a Tenderly Virtual TestNet fork of Ethereum mainnet so Uniswap liquidity is real while no transaction is sent to mainnet.
+---
 
-This repository is organized as a TypeScript monorepo:
+## What is Fundz?
 
-- `apps/api`: Fundz Core API
-- `apps/web`: demo dashboard
-- `apps/mcp`: MCP server facade
-- `packages/shared`: shared types and schemas
-- `packages/core`: domain logic for agents, policy, intents, and execution
-- `packages/db`: database schema and access layer
-- `packages/safe-kit`: Agent Safe integration
-- `packages/adapters/uniswap`: Uniswap execution adapter
+Fundz is a trust and execution layer between AI agents and DeFi. An AI agent submits a swap intent — via REST API or MCP — and Fundz handles everything else: authentication, policy enforcement, Uniswap quote fetching, and Safe transaction execution. The agent never constructs calldata or manages keys.
+
+Beyond execution gating, Fundz runs a continuous risk monitor that values each agent's Gnosis Safe using live Uniswap quotes. If the portfolio drops below a protected floor, Fundz automatically disables the agent, revokes all tokens, and exits the position back to the base asset.
+
+Think of it as a prop firm model applied to AI agents: Fundz provides capital, sets the rules, and enforces a margin call if the agent blows through its loss buffer.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────┐     ┌──────────────────────┐
+│   AI Agent (MCP)     │     │   AI Agent (REST)    │
+└─────────┬────────────┘     └──────────┬───────────┘
+          │ MCP tools                   │ POST /intents
+          ▼                             ▼
+┌─────────────────────────────────────────────────────┐
+│                   apps/api — Core API               │
+│                                                     │
+│  Auth → Policy Engine → Uniswap Adapter → Safe Kit │
+└────────────────────────┬────────────────────────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+   Uniswap Routing   Gnosis Safe    Prisma/SQLite
+       API           ProtocolKit      (persist)
+          │              │
+          └──────────────▼
+               Tenderly VNet
+            (Ethereum mainnet fork, chainId: 1)
+```
+
+| Package | Role |
+|---|---|
+| `apps/api` | Core API — auth, policy, intents, execution |
+| `apps/web` | React dashboard — portfolio, trades, risk, payout |
+| `apps/mcp` | MCP server facade — tool interface for AI clients |
+| `packages/core` | Domain logic — agents, policy, intents, execution |
+| `packages/db` | Prisma + SQLite schema and access layer |
+| `packages/safe-kit` | Gnosis Safe ProtocolKit integration |
+| `packages/adapters/uniswap` | Uniswap Routing API — quote + swap calldata |
+| `packages/shared` | Shared types and Zod schemas |
+
+---
 
 ## Quick Start
 
@@ -28,188 +73,26 @@ pnpm typecheck
 
 Set `UNISWAP_API_KEY` in `.env` to enable real Uniswap quotes. Without it, approved intents still create a pending execution with a clear configuration message.
 
-For the full hackathon walkthrough, use [DEMO_CHEATSHEET.md](./DEMO_CHEATSHEET.md). It contains the exact setup, Tenderly preparation, MCP/OpenClaw flow, risk monitor, market-move simulation, and troubleshooting commands.
+For the full hackathon walkthrough, see [DEMO_CHEATSHEET.md](./DEMO_CHEATSHEET.md). It covers setup, Tenderly preparation, MCP/OpenClaw flow, risk monitor, market-move simulation, and troubleshooting.
 
-Feedback for the Uniswap Foundation is included in [FEEDBACK.md](./FEEDBACK.md).
+---
 
-## Tenderly Mainnet Fork Demo
+## How It Works
 
-For the MVP, use a Tenderly Virtual TestNet forked from Ethereum mainnet instead of a public testnet. This keeps `chainId: 1` and gives the demo access to real Uniswap liquidity without sending transactions to mainnet.
-
-Create a mainnet Virtual TestNet in Tenderly, then configure `.env`. Use the Admin RPC for `TENDERLY_VNET_RPC_URL` because the demo preparation script needs Tenderly admin methods to set test balances.
-
-```bash
-TENDERLY_VNET_RPC_URL="<your Tenderly VNet RPC URL>"
-SAFE_RPC_URL="<same Tenderly VNet RPC URL>"
-SAFE_EXECUTOR_PRIVATE_KEY="<private key for a Safe signer on the fork>"
-SAFE_EXECUTOR_ADDRESS="<address for that private key>"
-SAFE_EXECUTION_GAS_LIMIT="3000000"
-FUNDZ_AGENT_TOKEN="<optional existing agent token>"
-DEMO_OWNER_ADDRESS="<demo agent owner>"
-DEMO_SAFE_ADDRESS="<existing Safe address on mainnet/fork>"
-FUNDZ_FUNDED_SAFE_ADDRESS="<Safe Fundz assigns automatically; defaults to DEMO_SAFE_ADDRESS>"
-DEMO_TOKEN_IN="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-DEMO_TOKEN_OUT="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-DEMO_TOKEN_WBTC="0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-DEMO_TOKEN_UNI="0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-DEMO_AMOUNT_IN="1000000"
-DEMO_MAX_AMOUNT_PER_OPERATION="1000000000"
-DEMO_DAILY_LIMIT="5000000000"
-```
-
-Fundz authenticates agent calls with bearer tokens. `POST /agents/register` returns a credential token once; store it as `FUNDZ_AGENT_TOKEN` for repeat runs. The token is stored only as a hash in the database. During registration Fundz automatically assigns `FUNDZ_FUNDED_SAFE_ADDRESS` to the agent, so the user does not link a Safe manually in the app.
-
-Prepare the fork state, check balances, and approve Uniswap spending:
-
-```bash
-pnpm demo:tenderly:prepare
-pnpm demo:tenderly:balances
-pnpm demo:tenderly:approve
-```
-
-The prepare step uses Tenderly admin RPC methods to set ETH on `SAFE_EXECUTOR_ADDRESS` and ERC-20 balance on `DEMO_SAFE_ADDRESS`. The approve step submits Safe transactions for the ERC-20 and Permit2 approvals needed by Uniswap Universal Router for both `DEMO_TOKEN_IN` and `DEMO_TOKEN_OUT`, so the normal swap and emergency exit path are both authorized. The default base token is USDC and the default balance is configured in base units through `DEMO_SAFE_TOKEN_BALANCE`.
-
-Run the API, then submit a demo swap intent:
-
-```bash
-pnpm dev:api
-pnpm demo:tenderly:swap
-```
-
-The API still evaluates the same Fundz policy. If approved, it requests a Uniswap quote/swap payload and executes it through Safe ProtocolKit against the Tenderly VNet RPC.
-
-For repeat demos on a fresh VNet, run `prepare`, `balances`, and `approve` before submitting the swap. If the Safe or token deployment happened after the VNet was created, recreate the VNet from a later mainnet block so the fork includes those contracts.
-
-## Risk Monitor And Emergency Exit Demo
-
-Fundz can monitor a demo agent's Safe in near real time using Uniswap quotes as the price source. The monitor values the Safe as:
-
-```text
-base token balance + Uniswap quote(risk token -> base token)
-```
-
-For the default demo, `DEMO_TOKEN_IN` is USDC and `DEMO_TOKEN_OUT` is WETH. The normal policy allowlist also includes WBTC and UNI, so the story can be framed as Fundz granting the agent access to WETH/USDC, WBTC/USDC, and UNI/USDC while the emergency monitor watches the active risk asset.
-
-The MVP risk model is intentionally simple:
-
-```text
-initial Safe value = Fundz protocol capital + agent loss margin + access fee
-protected value = Fundz protocol capital + access fee
-loss buffer = current Safe value - protected value
-```
-
-The agent pays the loss margin and access fee into the Safe. Fundz funds the protocol capital. The access fee is recorded as fee revenue, not as risk budget. Only the agent loss margin can be consumed by market loss before Fundz revokes access and exits back to the base asset.
-
-Configure the risk and market-move environment:
-
-```bash
-FUNDZ_PROTOCOL_CAPITAL="89000000000"
-AGENT_LOSS_MARGIN="10000000000"
-AGENT_ACCESS_FEE="1000000000"
-RISK_EMERGENCY_SLIPPAGE_BPS="100"
-RISK_MONITOR_INTERVAL_MS="10000"
-
-MARKET_ACTOR_PRIVATE_KEY="<private key for a funded Tenderly-only EOA>"
-MARKET_ACTOR_ADDRESS="<address for MARKET_ACTOR_PRIVATE_KEY>"
-MARKET_MOVE_TOKEN_IN="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-MARKET_MOVE_TOKEN_OUT="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-MARKET_MOVE_AMOUNT_IN="100000000000000000000"
-MARKET_ACTOR_TOKEN_BALANCE="1000000000000000000000"
-MARKET_ACTOR_ETH_BALANCE="10000000000000000000"
-```
-
-Registering an agent automatically creates the default risk policy for that agent, so the dashboard can show Risk Budget and Portfolio Delta without editing `DEMO_OWNER_ADDRESS`. To manually re-apply the demo defaults to the configured demo owner, run:
-
-```bash
-pnpm demo:risk:setup
-```
-
-In one terminal, start the monitor. By default it scans every enabled risk policy, so newly registered agents are included automatically:
-
-```bash
-pnpm demo:risk:monitor
-```
-
-In another terminal, simulate a third-party market move on the Tenderly fork:
-
-```bash
-pnpm demo:tenderly:market-move
-```
-
-`demo:tenderly:market-move` uses Tenderly admin RPC methods to fund `MARKET_ACTOR_ADDRESS`, gives it ERC-20 balance, approves Uniswap, then sends a real Universal Router swap through `cast` against the VNet RPC. By default it sells WETH into USDC to move the monitored WETH position against the agent. Install Foundry so the `cast` command is available.
-
-When the monitored Safe value is at or below the protected value, Fundz:
-
-- disables the agent
-- revokes every active bearer token for that agent
-- quotes the full risk-asset balance back to the base asset through Uniswap
-- executes the emergency swap through the Safe with the backend executor
-- records a `RiskSnapshot` and `RiskEvent` in Prisma
-
-The emergency path does not require the agent to be a Safe owner. The agent only authenticates to Fundz with its bearer token; Fundz owns the policy decision and Safe execution path.
-
-## Run The Demo
-
-Use separate terminals:
-
-```bash
-pnpm dev:api
-pnpm dev:web
-```
-
-Open:
-
-- API: `http://localhost:3001/health`
-- Dashboard: `http://localhost:3000`
-
-The dashboard reads `GET /dashboard` from `VITE_API_URL` or `http://localhost:3001` by default. For the live demo it shows only the connected wallet's agent: public owner address, automatically assigned Fundz Safe, policy allowlist, full trade history, portfolio value, open positions, portfolio delta, drawdown, protected Fundz capital, agent margin, claimable payout, total payout received, and emergency-exit status. Portfolio valuation uses Safe token balances from the configured RPC and Uniswap quotes for non-USDC positions.
-
-## API Happy Path
-
-Register or update a demo agent:
+### 1. Register an agent
 
 ```bash
 curl -s -X POST http://localhost:3001/agents/register \
   -H 'content-type: application/json' \
   -d '{
-    "name": "Demo Agent",
+    "name": "My Agent",
     "ownerAddress": "0x1111111111111111111111111111111111111111"
   }'
 ```
 
-Fundz assigns `FUNDZ_FUNDED_SAFE_ADDRESS` automatically during registration. The response includes `credential.token`. Save it securely; Fundz stores only its hash and will not be able to show the same token again.
+Fundz assigns a Gnosis Safe automatically and returns a bearer token. Store it — Fundz only keeps the hash.
 
-Manage agent tokens:
-
-```bash
-curl -s http://localhost:3001/agents/<agentId>/credentials
-
-curl -s -X POST http://localhost:3001/agents/<agentId>/credentials \
-  -H 'content-type: application/json' \
-  -d '{ "label": "agent-runtime" }'
-
-curl -s -X POST http://localhost:3001/agents/<agentId>/credentials/<credentialId>/revoke
-```
-
-Credential list responses never include token secrets. Revoked tokens can no longer submit intents.
-
-Request an agent payout:
-
-```bash
-curl -s -X POST http://localhost:3001/agents/<agentId>/payouts \
-  -H 'content-type: application/json' \
-  -d '{ "ownerAddress": "<connected owner wallet>" }'
-```
-
-The payout endpoint pays 80% of positive portfolio delta to the connected owner wallet. The dashboard shows both currently claimable payout and total payout already sent.
-
-Get policy:
-
-```bash
-curl -s http://localhost:3001/agents/<agentId>/policy
-```
-
-Submit an intent:
+### 2. Submit an intent
 
 ```bash
 curl -s -X POST http://localhost:3001/intents \
@@ -217,10 +100,10 @@ curl -s -X POST http://localhost:3001/intents \
   -H 'authorization: Bearer <agentToken>' \
   -d '{
     "agentId": "<agentId>",
-    "nonce": "demo-1",
+    "nonce": "swap-1",
     "action": "uniswap.swap",
     "chainId": 1,
-    "tokenIn": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "tokenIn":  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     "tokenOut": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "amountIn": "1000000",
     "maxSlippageBps": 50,
@@ -228,73 +111,170 @@ curl -s -X POST http://localhost:3001/intents \
   }'
 ```
 
-Each `(agentId, nonce)` pair is unique. Change `nonce` for repeat tests.
+Fundz authenticates the token, evaluates policy, fetches a Uniswap quote and Universal Router calldata, and executes the swap through the Safe. Each `(agentId, nonce)` pair is unique — change `nonce` for repeat tests.
 
-Fundz verifies the bearer token before policy evaluation. The token must belong to the same `agentId` included in the intent.
+### 3. Via MCP
 
-## MCP
-
-Build first:
+Configure any MCP-compatible client (Claude Desktop, OpenClaw) to run:
 
 ```bash
-pnpm typecheck
+node /path/to/fundz/apps/mcp/dist/index.js
 ```
 
-Configure an MCP client, such as OpenClaw, to run:
+Available tools: `authenticate_agent` · `submit_intent` · `get_policy` · `issue_agent_token` · `list_agent_tokens` · `revoke_agent_token` · `get_metrics`
+
+The MCP server is a thin facade over `packages/core` — it contains no policy or execution logic.
+
+---
+
+## Tenderly Mainnet Fork
+
+The MVP runs on a Tenderly Virtual TestNet forked from Ethereum mainnet (`chainId: 1`). Same contract addresses, same Uniswap pools, same liquidity as mainnet — but no transactions hit mainnet.
+
+### Setup
 
 ```bash
-node /home/rome0/fundz/apps/mcp/dist/index.js
+TENDERLY_VNET_RPC_URL="<your Tenderly VNet admin RPC URL>"
+SAFE_RPC_URL="<same URL>"
+SAFE_EXECUTOR_PRIVATE_KEY="<private key for a Safe signer on the fork>"
+SAFE_EXECUTOR_ADDRESS="<address for that key>"
+UNISWAP_API_KEY="<Uniswap API key>"
 ```
 
-Available tools:
+### Prepare the fork
 
-- `authenticate_agent`
-- `get_policy`
-- `submit_intent` (requires `FUNDZ_AGENT_TOKEN` in the MCP server environment)
-- `issue_agent_token`
-- `list_agent_tokens`
-- `revoke_agent_token`
-- `get_metrics`
+```bash
+pnpm demo:tenderly:prepare   # fund executor + set Safe ERC-20 balances via admin RPC
+pnpm demo:tenderly:balances  # verify
+pnpm demo:tenderly:approve   # submit Safe ERC-20 + Permit2 approvals for Universal Router
+```
 
-The MCP server is a thin facade over `packages/core`; it does not contain policy or execution logic.
+### Run
 
-## Policy MVP
+```bash
+pnpm dev:api                 # terminal 1
+pnpm dev:web                 # terminal 2
+pnpm demo:tenderly:swap      # submit a swap intent
+```
 
-The minimum policy engine enforces:
+---
 
-- token allowlist
-- chain allowlist via `chainId`
-- max amount per operation
-- cooldown
-- daily limit
-- deadline
+## Risk Monitor & Emergency Exit
 
-Approved intents create a Uniswap execution record. If Safe execution is configured, Fundz submits the swap through the Safe and waits for the transaction receipt. Rejected intents store policy reasons.
+Fundz monitors each agent's Safe continuously:
 
-## Current MVP Boundaries
+```
+portfolio value = base token balance + uniswap_quote(risk token → base token)
+protected floor = protocol capital + access fee
+loss buffer     = portfolio value − protected floor
+```
 
-Included:
+When `portfolio value ≤ protected floor`:
 
-- TypeScript monorepo with `apps/` and `packages/`
+1. Agent is disabled
+2. All bearer tokens are revoked
+3. Full risk-asset balance is quoted back to base token via Uniswap
+4. Emergency swap is executed through the Safe executor
+5. `RiskSnapshot` and `RiskEvent` are recorded in Prisma
+
+The emergency exit does not require agent cooperation. Fundz owns the execution path entirely.
+
+### Simulate a market crash
+
+```bash
+pnpm demo:risk:monitor           # terminal 1 — start monitor
+pnpm demo:tenderly:market-move   # terminal 2 — large directional swap on the VNet pool
+```
+
+`market-move` uses Tenderly admin RPC to fund a test EOA and execute a real Universal Router swap via `cast` (Foundry), moving the pool price against the agent's position. Requires [Foundry](https://getfoundry.sh/).
+
+---
+
+## Policy Engine
+
+Every intent passes through policy before execution:
+
+- Token allowlist
+- Chain allowlist (`chainId`)
+- Max amount per operation
+- Daily rolling limit
+- Cooldown between operations
+- Deadline validation
+
+Rejected intents are stored with the policy reason. Approved intents proceed to Uniswap quote fetching and Safe execution.
+
+---
+
+## Dashboard
+
+```bash
+pnpm dev:web   # http://localhost:3000
+```
+
+Wallet-scoped — shows only the connected owner's agent:
+
+- Safe address and status (active / disabled / emergency exit)
+- Policy allowlist
+- Full trade history
+- Portfolio value and open positions
+- Portfolio delta and drawdown
+- Protected Fundz capital vs agent margin
+- Claimable payout (80% of positive delta)
+
+---
+
+## Payout
+
+Agents that trade profitably can claim 80% of positive portfolio delta:
+
+```bash
+curl -s -X POST http://localhost:3001/agents/<agentId>/payouts \
+  -H 'content-type: application/json' \
+  -d '{ "ownerAddress": "<connected owner wallet>" }'
+```
+
+---
+
+## Environment Variables
+
+See [`.env.example`](./.env.example) for the full reference.
+
+| Variable | Description |
+|---|---|
+| `TENDERLY_VNET_RPC_URL` | Tenderly VNet admin RPC URL |
+| `SAFE_EXECUTOR_PRIVATE_KEY` | Private key for the Safe executor |
+| `UNISWAP_API_KEY` | Required for real Uniswap quotes |
+| `FUNDZ_PROTOCOL_CAPITAL` | Capital Fundz puts into each Safe (base units) |
+| `AGENT_LOSS_MARGIN` | Agent's loss buffer before emergency exit triggers |
+| `AGENT_ACCESS_FEE` | Access fee recorded as revenue, not risk budget |
+| `RISK_MONITOR_INTERVAL_MS` | Risk monitor polling interval |
+
+---
+
+## MVP Boundaries
+
+**Included:**
+- TypeScript monorepo — `apps/` and `packages/`
 - SQLite + Prisma persistence
-- Core API
-- MCP facade
-- dashboard
-- automatic Fundz funded Safe assignment during agent registration
-- wallet-scoped dashboard with disconnect support
-- Uniswap quote and swap calldata preparation from the backend
+- REST API + MCP server facade
+- React dashboard with wallet connection
+- Uniswap quote and swap calldata — server-side, agent never sees calldata
 - Safe transaction submission on Tenderly mainnet forks
-- Tenderly demo scripts for funding, approvals, balance checks, and swap submission
-- receipt-aware Safe execution failure handling
-- risk monitor snapshots, bearer-token revocation, and emergency Safe exit
-- agent payout requests for 80% of positive portfolio delta
-- Tenderly market-move demo script for third-party pool movement simulation
+- Receipt-aware execution failure handling
+- Risk monitor with bearer-token revocation and emergency Safe exit
+- Agent payout requests (80% of positive portfolio delta)
+- Tenderly market-move simulation script
 
-Not included yet:
+**Not included yet:**
+- Cryptographic signature verification on intents
+- Editable policies in the dashboard
+- Production auth
+- Automatic Safe deployment pool
+- Multi-protocol adapters beyond Uniswap
+- Production-grade execution monitoring and reconciliation
 
-- cryptographic signature verification
-- editable policies in the dashboard
-- production auth
-- automatic Safe deployment/allocation pool
-- multi-protocol adapters
-- production-grade execution monitoring and reconciliation
+---
+
+## License
+
+MIT
