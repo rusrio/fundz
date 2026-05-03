@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="fundzbanner" src="https://github.com/user-attachments/assets/48d87d47-0678-449e-9ada-26b53252096e" />
+
 # Fundz
 
 Fundz is a policy-enforced execution layer for AI agents.
@@ -28,7 +30,7 @@ Set `UNISWAP_API_KEY` in `.env` to enable real Uniswap quotes. Without it, appro
 
 For the full hackathon walkthrough, use [DEMO_CHEATSHEET.md](./DEMO_CHEATSHEET.md). It contains the exact setup, Tenderly preparation, MCP/OpenClaw flow, risk monitor, market-move simulation, and troubleshooting commands.
 
-Prize feedback for the Uniswap Foundation track is included in [FEEDBACK.md](./FEEDBACK.md).
+Feedback for the Uniswap Foundation is included in [FEEDBACK.md](./FEEDBACK.md).
 
 ## Tenderly Mainnet Fork Demo
 
