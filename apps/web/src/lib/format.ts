@@ -1,6 +1,3 @@
-import type { Agent, Execution, StoredIntent } from "@fundz/shared";
-import type { AgentPerformance, DashboardSnapshot } from "../types.js";
-
 export function shortAddress(value: string | null): string {
   if (!value) {
     return "Not linked";
@@ -34,50 +31,36 @@ export function statusClass(status: string): string {
   return "status";
 }
 
-export function isAddress(value: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(value);
-}
-
 export function formatSignedBps(value: number): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${(value / 100).toFixed(2)}%`;
 }
 
-export function computePerformance(agent: Agent | null, snapshot: DashboardSnapshot): AgentPerformance {
-  if (!agent) {
-    return {
-      totalIntents: 0,
-      approvalRate: 0,
-      rejectedCount: 0,
-      executionsSubmitted: 0,
-      executionsPending: 0,
-      executionsFailed: 0,
-      totalAmountIn: "0",
-      latestExecutionStatus: "No agent",
-      lastActivity: "No activity"
-    };
+export function formatBaseUnits(value: string | null | undefined, decimals = 6, maximumFractionDigits = 4): string {
+  if (!value) {
+    return "0";
   }
 
-  const intents = snapshot.intents.filter((intent: StoredIntent) => intent.agentId === agent.id);
-  const executions = snapshot.executions.filter((execution: Execution) => execution.agentId === agent.id);
-  const approvedCount = intents.filter((intent) => intent.status === "policy_approved").length;
-  const rejectedCount = intents.filter((intent) => intent.status === "policy_rejected").length;
-  const totalAmountIn = intents.reduce((sum, intent) => sum + BigInt(intent.amountIn), 0n).toString();
-  const latestExecution = executions[0];
-  const activityDates = [...intents.map((intent) => intent.updatedAt), ...executions.map((execution) => execution.updatedAt)]
-    .map((value) => new Date(value).getTime())
-    .filter((value) => Number.isFinite(value));
-  const latestActivity = activityDates.length > 0 ? new Date(Math.max(...activityDates)).toISOString() : null;
+  try {
+    const negative = value.startsWith("-");
+    const absolute = negative ? value.slice(1) : value;
+    const base = 10n ** BigInt(decimals);
+    const raw = BigInt(absolute);
+    const whole = raw / base;
+    const fraction = raw % base;
+    const fractionText = fraction.toString().padStart(decimals, "0").slice(0, maximumFractionDigits);
+    const trimmedFraction = fractionText.replace(/0+$/, "");
+    const formattedWhole = new Intl.NumberFormat("en-US").format(Number(whole));
+    return `${negative ? "-" : ""}${formattedWhole}${trimmedFraction ? `.${trimmedFraction}` : ""}`;
+  } catch {
+    return value;
+  }
+}
 
-  return {
-    totalIntents: intents.length,
-    approvalRate: intents.length > 0 ? Math.round((approvedCount / intents.length) * 100) : 0,
-    rejectedCount,
-    executionsSubmitted: executions.filter((execution) => execution.status === "submitted").length,
-    executionsPending: executions.filter((execution) => execution.status === "pending").length,
-    executionsFailed: executions.filter((execution) => execution.status === "failed").length,
-    totalAmountIn,
-    latestExecutionStatus: latestExecution?.status ?? "No executions",
-    lastActivity: formatDate(latestActivity)
-  };
+export function formatUsdUnits(value: string | null | undefined): string {
+  return `$${formatBaseUnits(value, 6, 2)}`;
+}
+
+export function formatTokenUnits(value: string | null | undefined, decimals: number): string {
+  return formatBaseUnits(value, decimals, decimals > 8 ? 5 : 4);
 }

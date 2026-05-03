@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Check, ShieldCheck, WalletCards } from "lucide-react";
-import { fundingChallenges } from "../lib/challenges.js";
-import type { FundingChallenge, WalletState } from "../types.js";
-import { BrandMark, ProcessStep } from "./ui.js";
+import type { ReactNode } from "react";
+import { ArrowDown, ArrowRight, Check, LockKeyhole, Route, ShieldCheck, WalletCards } from "lucide-react";
+import type { WalletState } from "../types.js";
+import logo from "../../../../resources/logo-nobackground.png";
 
 type LandingProps = {
   wallet: WalletState;
@@ -10,129 +10,130 @@ type LandingProps = {
   onConnect: () => void;
 };
 
-const heroStats = [
-  ["$1M", "maximum challenge allocation"],
-  ["Safe", "custody layer"],
-  ["Policy", "execution gate"]
+const workflow = [
+  "Agent proves edge",
+  "Fundz opens Safe",
+  "Policies gate trades",
+  "Risk is monitored",
+  "Access scales or exits"
 ];
+
+const controls = ["Token allowlist", "Max order size", "Cooldown window", "Daily capacity", "Drawdown guard", "Credential revoke"];
 
 export function Landing({ wallet, onLaunch, onConnect }: LandingProps) {
   return (
     <main className="landing">
-      <section className="landingHero">
-        <nav className="landingNav" aria-label="Primary navigation">
-          <BrandMark />
-          <div className="landingNavLinks" aria-label="Landing sections">
-            <a href="#challenges">Challenges</a>
-            <a href="#model">Model</a>
-            <a href="#controls">Controls</a>
-          </div>
-          <button className="navLaunch" type="button" onClick={onLaunch}>
-            Launch app
+      <header className="landingTopbar">
+        <div className="landingActions">
+          <button className="ghostButton" type="button" onClick={onConnect}>
+            <WalletCards size={16} aria-hidden="true" />
+            {wallet.status === "connecting" ? "Connecting" : "Connect wallet"}
           </button>
-        </nav>
+          <button className="primaryButton" type="button" onClick={onLaunch}>
+            Launch app
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
 
-        <div className="heroPoster">
-          <motion.div
-            className="heroCopy"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut" }}
-          >
-            <p className="brandKicker">Agent Prop Firm</p>
-            <h1>Capital accounts for autonomous execution.</h1>
-            <p>
-              Fundz evaluates machine-run strategies, assigns Safe-based capital, and scales only the agents that stay
-              inside policy.
-            </p>
-            <div className="heroActions">
-              <button className="primaryButton" type="button" onClick={onLaunch}>
-                Launch app
-                <ArrowRight size={17} aria-hidden="true" />
-              </button>
-              <button className="secondaryHeroButton" type="button" onClick={onConnect}>
-                <WalletCards size={17} aria-hidden="true" />
-                {wallet.status === "connecting" ? "Connecting..." : "Connect wallet"}
-              </button>
-            </div>
-            {wallet.status === "missing" ? <p className="heroNote">Install an EIP-1193 wallet to use the live demo.</p> : null}
-          </motion.div>
+      <section className="landingHero">
+        <motion.div
+          className="landingHeroCopy"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <h1>Fundz capital accounts for autonomous traders.</h1>
+          <p>
+            Give AI agents funded Safe accounts, policy-bound execution, and a risk layer that protects protocol capital before every trade.
+          </p>
+          <div className="heroActions">
+            <button className="primaryButton" type="button" onClick={onLaunch}>
+              Launch app
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+            <button className="secondaryButton" type="button" onClick={onConnect}>
+              <WalletCards size={16} aria-hidden="true" />
+              {wallet.account ? "Wallet connected" : "Connect wallet"}
+            </button>
+          </div>
+          {wallet.error ? <p className="heroNote">{wallet.error}</p> : null}
+        </motion.div>
 
-          <motion.div
-            className="heroArtifact"
-            initial={{ opacity: 0, y: 32, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.65, delay: 0.12, ease: "easeOut" }}
-            aria-label="Fundz allocation terminal"
-          >
-            <div className="brandPlane">
-              <span>FZ</span>
-              <small>White-glove capital infrastructure for autonomous agents.</small>
+        <motion.div
+          className="heroAppScene"
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          aria-label="Fundz execution preview"
+        >
+          <span className="floatingChip chipOne">WETH / USDC</span>
+          <span className="floatingChip chipTwo">Safe ready</span>
+          <span className="floatingChip chipThree">Drawdown 0.0%</span>
+          <div className="fundzAppCard">
+            <header className="fundzAppHeader">
+              <img src={logo} alt="" aria-hidden="true" />
+              <span className="status statusPositive">Policy live</span>
+            </header>
+            <div className="intentPanel">
+              <span>Agent intent</span>
+              <strong>Swap 1,000 USDC to WETH</strong>
+              <small>OpenClaw Agent · Ethereum fork</small>
             </div>
-            <div className="heroStats" aria-label="Product proof">
-              {heroStats.map(([value, label]) => (
-                <div key={label}>
-                  <strong>{value}</strong>
-                  <span>{label}</span>
-                </div>
-              ))}
+            <div className="flowDivider"><ArrowDown size={18} aria-hidden="true" /></div>
+            <div className="executionStack">
+              <PreviewStep icon={<ShieldCheck size={18} />} title="Policy check" body="Allowlist, size, cooldown, and daily capacity pass." status="Approved" />
+              <PreviewStep icon={<LockKeyhole size={18} />} title="Safe execution" body="Fundz signs and routes from the assigned Safe." status="Ready" />
+              <PreviewStep icon={<Route size={18} />} title="Risk monitor" body="Protected floor stays above $101,000 after execution." status="Guarded" />
             </div>
-          </motion.div>
+            <div className="capitalSummary">
+              <div>
+                <span>Fundz capital</span>
+                <strong>$100k</strong>
+              </div>
+              <div>
+                <span>Margin</span>
+                <strong>$10k</strong>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="landingStrip">
+        <div className="stripHeader">
+          <h2>A prop-firm model built for machine execution.</h2>
+        </div>
+        <div className="workflowGrid">
+          {workflow.map((item, index) => (
+            <article key={item}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{item}</strong>
+            </article>
+          ))}
         </div>
       </section>
 
-      <motion.section
-        className="challengeSection"
-        id="challenges"
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
-        <div className="sectionLead">
-          <p className="eyebrow">Funding challenges</p>
-          <h2>Three paths from evaluation to allocation.</h2>
+      <section className="landingStrip twoColumn">
+        <div className="stripHeader">
+          <h2>Agent margin takes first loss. Fundz capital stays protected.</h2>
         </div>
-        <div className="challengeTape">
-          <div className="tapeHeader">
-            <span>Open challenges</span>
-            <strong>Allocation Board</strong>
-          </div>
-          {fundingChallenges.map((challenge) => (
-            <ChallengeRow challenge={challenge} key={challenge.name} onLaunch={onLaunch} />
-          ))}
+        <div className="modelList">
+          <ModelLine label="Fundz protocol capital" value="$100,000" />
+          <ModelLine label="Agent loss margin" value="$10,000" />
+          <ModelLine label="Access fee" value="$1,000" />
+          <ModelLine label="Protected value" value="$101,000" strong />
         </div>
-      </motion.section>
+      </section>
 
-      <motion.section
-        className="landingBand"
-        id="model"
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
-        <div>
-          <p className="eyebrow">Operating model</p>
-          <h2>Proof before scale. Custody before execution.</h2>
+      <section className="landingStrip twoColumn">
+        <div className="stripHeader">
+          <h2>Execution constraints are brand infrastructure, not fine print.</h2>
         </div>
-        <div className="explainGrid">
-          <ProcessStep index="01" title="Evaluate" body="Agents run through explicit profit targets, time windows, and drawdown limits." />
-          <ProcessStep index="02" title="Constrain" body="Policies define chain, token allowlist, operation size, cooldown, and daily capacity." />
-          <ProcessStep index="03" title="Custody" body="Funds remain in Safe accounts while signed intents move through controlled adapters." />
-          <ProcessStep index="04" title="Scale" body="Capital increases from observed execution quality, not unverified claims." />
-        </div>
-      </motion.section>
-
-      <section className="landingDetail" id="controls">
-        <div>
-          <p className="eyebrow">Access conditions</p>
-          <h2>Capital is unavailable until ownership, custody, funding, and policy are complete.</h2>
-        </div>
-        <ul className="conditionList">
-          {["Wallet connected", "Agent registered", "Safe linked and funded", "Policy active", "Signed intent within limits"].map((item) => (
+        <ul className="controlList">
+          {controls.map((item) => (
             <li key={item}>
-              <Check size={16} aria-hidden="true" />
+              <div className="iconWrap"><Check size={16} aria-hidden="true" /></div>
               {item}
             </li>
           ))}
@@ -140,46 +141,37 @@ export function Landing({ wallet, onLaunch, onConnect }: LandingProps) {
       </section>
 
       <section className="finalCta">
-        <ShieldCheck size={22} aria-hidden="true" />
-        <h2>Launch the workspace and connect an agent.</h2>
-        <button className="primaryButton" type="button" onClick={onLaunch}>
-          Launch app
-          <ArrowRight size={17} aria-hidden="true" />
-        </button>
+        <div className="ctaContent">
+          <ShieldCheck size={36} aria-hidden="true" className="ctaIcon" />
+          <h2>Open Fundz and connect the agent wallet.</h2>
+          <button className="primaryButton" type="button" onClick={onLaunch}>
+            Launch app
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
       </section>
     </main>
   );
 }
 
-function ChallengeRow({ challenge, onLaunch }: { challenge: FundingChallenge; onLaunch: () => void }) {
-  const rows = [
-    ["Target", challenge.profitTarget],
-    ["Max DD", challenge.maxDrawdown],
-    ["Daily DD", challenge.dailyDrawdown],
-    ["Limit", challenge.timeLimit]
-  ];
-
+function ModelLine({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
-    <article className={challenge.featured ? "challengeRow featured" : "challengeRow"}>
-      <div className="challengeIdentity">
-        <span>{challenge.featured ? "Featured" : challenge.phase}</span>
-        <strong>{challenge.name}</strong>
+    <div className={strong ? "modelLine strong" : "modelLine"}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function PreviewStep({ icon, title, body, status }: { icon: ReactNode; title: string; body: string; status: string }) {
+  return (
+    <article className="previewStep">
+      <div className="previewIcon">{icon}</div>
+      <div>
+        <strong>{title}</strong>
+        <p>{body}</p>
       </div>
-      <div className="challengeAllocationCompact">
-        <strong>{challenge.allocation}</strong>
-        <span>Allocation</span>
-      </div>
-      <div className="challengeRulesCompact">
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </div>
-      <button className="challengeAction" type="button" onClick={onLaunch}>
-        {challenge.action}
-      </button>
+      <span>{status}</span>
     </article>
   );
 }

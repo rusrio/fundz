@@ -1,23 +1,30 @@
 :root {
-  --background: #f8f9f7;
+  --bg: #f7f8fb;
   --surface: #ffffff;
-  --surface-soft: #f1f3f0;
-  --surface-strong: #e6e9e4;
-  --ink: #050505;
-  --ink-soft: #3f443f;
-  --muted: #72786f;
-  --line: #d9ddd6;
-  --line-strong: #b8bfb5;
-  --primary: #050505;
-  --on-primary: #ffffff;
-  --emerald: #007a4d;
-  --emerald-bright: #20d58a;
-  --emerald-soft: rgba(0, 122, 77, 0.1);
-  --shadow-soft: 0 18px 60px rgba(5, 5, 5, 0.06);
+  --surface-muted: #f0f3f8;
+  --surface-strong: #e6ebf3;
+  --surface-raised: rgba(255, 255, 255, 0.74);
+  --ink: #10141f;
+  --ink-soft: #3c485f;
+  --muted: #768197;
+  --line: #e2e7f0;
+  --line-strong: #c8d0df;
+  --green: #10b981;
+  --green-dark: #047857;
+  --green-soft: #e6f8f0;
+  --amber: #b97800;
+  --amber-soft: #fff4d8;
+  --red: #cf2e3a;
+  --red-soft: #fff0f1;
+  --nav: rgba(255, 255, 255, 0.76);
+  --shadow: 0 18px 60px rgba(16, 20, 31, 0.08);
+  --shadow-soft: 0 8px 28px rgba(16, 20, 31, 0.06);
+  --radius-xl: 24px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
   color: var(--ink);
-  background: var(--background);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: geometricPrecision;
 }
@@ -31,9 +38,9 @@ html {
 }
 
 body {
-  margin: 0;
   min-width: 320px;
-  background: var(--background);
+  margin: 0;
+  background: var(--bg);
 }
 
 button,
@@ -48,7 +55,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.58;
+  opacity: 0.56;
 }
 
 h1,
@@ -58,34 +65,17 @@ p {
   margin: 0;
 }
 
-a {
-  color: inherit;
-}
-
 .brandMark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: var(--ink);
+  min-width: 74px;
 }
 
-.brandMark span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  color: var(--on-primary);
-  background: var(--primary);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.brandMark strong {
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 0;
+.brandMark img {
+  display: block;
+  width: 76px;
+  height: auto;
+  object-fit: contain;
 }
 
 .brandMarkButton {
@@ -94,507 +84,861 @@ a {
 }
 
 .primaryButton,
-.secondaryHeroButton,
-.ghostButton,
 .secondaryButton,
-.navLaunch {
+.ghostButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   min-height: 44px;
   padding: 0 18px;
-  border-radius: 8px;
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12px;
+  border-radius: 999px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+  letter-spacing: 0;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.primaryButton,
-.navLaunch {
-  color: var(--on-primary);
-  background: var(--primary);
-  border: 1px solid var(--primary);
+.primaryButton {
+  color: #ffffff;
+  background: var(--green);
+  border: 1px solid var(--green);
+  box-shadow: 0 10px 26px rgba(16, 185, 129, 0.2);
 }
 
-.secondaryHeroButton,
-.ghostButton,
-.secondaryButton {
+.secondaryButton,
+.ghostButton {
   color: var(--ink);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.78);
   border: 1px solid var(--line);
 }
 
 .primaryButton:hover,
-.navLaunch:hover,
-.secondaryHeroButton:hover,
-.ghostButton:hover,
-.secondaryButton:hover {
-  box-shadow: var(--shadow-soft);
+.secondaryButton:hover,
+.ghostButton:hover {
   transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
 }
 
-.primaryButton.compact {
-  min-height: 40px;
-  padding: 0 15px;
+.compact {
+  min-height: 36px;
+  padding: 0 12px;
 }
 
-.eyebrow,
-.brandKicker {
-  color: var(--emerald);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12px;
+.eyebrow {
+  color: var(--green-dark);
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.statusPositive {
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-color: rgba(13, 191, 120, 0.35);
+}
+
+.statusNegative {
+  color: var(--red);
+  background: var(--red-soft);
+  border-color: rgba(207, 46, 58, 0.35);
+}
+
+.errorBanner,
+.warningBanner,
+.successBanner {
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.errorBanner {
+  border-color: rgba(207, 46, 58, 0.45);
+}
+
+.successBanner {
+  margin-top: 14px;
+  border-color: rgba(16, 185, 129, 0.34);
+}
+
+.inlineWarning {
+  margin-bottom: 14px;
+}
+
+/* Landing */
+
 .landing {
   min-height: 100vh;
-  overflow: hidden;
-  background: var(--background);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(16, 185, 129, 0.12), transparent 30%),
+    radial-gradient(circle at 84% 16%, rgba(88, 123, 255, 0.1), transparent 26%),
+    var(--bg);
+}
+
+.landingTopbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  min-height: 72px;
+  padding: 0 24px;
+  background: var(--nav);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(226, 231, 240, 0.7);
+}
+
+.landingActions,
+.heroActions,
+.topbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.liveSyncStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--green-dark);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.liveSyncStatus svg {
+  fill: currentColor;
+}
+
+.spinIcon {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .landingHero {
   position: relative;
-  min-height: 100svh;
-  color: var(--ink);
-  background:
-    linear-gradient(90deg, rgba(5, 5, 5, 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(5, 5, 5, 0.04) 1px, transparent 1px),
-    var(--background);
-  background-size: 72px 72px;
-  border-bottom: 1px solid var(--line);
-}
-
-.landingNav {
-  position: relative;
-  z-index: 3;
-  display: flex;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(390px, 0.85fr) minmax(520px, 1fr);
+  gap: 70px;
   align-items: center;
-  justify-content: space-between;
-  min-height: 72px;
-  padding: 0 32px;
-  background: rgba(248, 249, 247, 0.86);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--line);
+  min-height: calc(100svh - 72px);
+  padding: 76px 60px 92px;
 }
 
-.landingNavLinks {
-  position: absolute;
-  left: 50%;
-  display: inline-flex;
-  gap: 30px;
-  transform: translateX(-50%);
-}
-
-.landingNavLinks a {
-  color: var(--ink-soft);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.landingNavLinks a:hover {
-  color: var(--emerald);
-}
-
-.heroPoster {
+.landingHeroCopy {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(520px, 1fr);
-  gap: 72px;
-  align-items: end;
-  width: min(1360px, calc(100% - 64px));
-  min-height: calc(100svh - 72px);
-  margin: 0 auto;
-  padding: 72px 0 64px;
+  max-width: 680px;
 }
 
-.heroCopy {
-  display: grid;
-  align-content: end;
-  max-width: 740px;
+.landingHeroCopy .eyebrow {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 11px;
 }
 
-.brandKicker {
-  margin-bottom: 18px;
+.landingHeroCopy h1 {
+  color: #090a0b;
+  font-size: clamp(52px, 6.4vw, 86px);
+  font-weight: 760;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
 }
 
-.heroCopy h1 {
-  color: var(--primary);
-  font-size: clamp(58px, 8vw, 116px);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
-}
-
-.heroCopy p:not(.brandKicker):not(.heroNote) {
-  max-width: 560px;
-  margin-top: 26px;
+.landingHeroCopy p:not(.eyebrow):not(.heroNote) {
+  max-width: 600px;
+  margin-top: 24px;
   color: var(--ink-soft);
-  font-size: 18px;
-  line-height: 1.5;
+  font-size: 20px;
+  line-height: 1.55;
 }
 
 .heroActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 42px;
+  margin-top: 40px;
 }
 
 .heroNote {
-  margin-top: 16px;
-  color: var(--ink);
+  margin-top: 14px;
+  color: var(--red);
   font-size: 13px;
   font-weight: 700;
 }
 
-.heroArtifact {
-  display: grid;
-  gap: 16px;
-}
-
-.brandPlane {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 360px;
-  padding: 30px;
-  overflow: hidden;
-  color: var(--on-primary);
-  background: var(--primary);
-  border-radius: 20px;
-  box-shadow: var(--shadow-soft);
-}
-
-.brandPlane::after {
-  position: absolute;
-  right: -54px;
-  bottom: -72px;
-  content: "FUNDZ";
-  color: rgba(255, 255, 255, 0.08);
-  font-size: 170px;
-  font-weight: 950;
-  line-height: 0.8;
-  letter-spacing: -0.055em;
-}
-
-.brandPlane span {
+.heroAppScene {
   position: relative;
   z-index: 1;
+  display: grid;
+  place-items: center;
+  min-height: 650px;
+}
+
+.floatingChip {
+  position: absolute;
+  z-index: 0;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  color: var(--primary);
-  background: var(--on-primary);
-  border-radius: 12px;
-  font-size: 20px;
-  font-weight: 950;
+  min-height: 38px;
+  padding: 0 14px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 231, 240, 0.8);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  font-size: 12px;
+  font-weight: 800;
+  backdrop-filter: blur(14px);
+  animation: chipFloat 7s ease-in-out infinite;
 }
 
-.brandPlane small {
+.chipOne {
+  top: 40px;
+  left: 12%;
+}
+
+.chipTwo {
+  right: 5%;
+  top: 132px;
+  animation-delay: -2s;
+}
+
+.chipThree {
+  left: 3%;
+  bottom: 96px;
+  animation-delay: -4s;
+}
+
+@keyframes chipFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.fundzAppCard {
   position: relative;
   z-index: 1;
-  max-width: 420px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.18;
+  width: min(480px, 100%);
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(226, 231, 240, 0.88);
+  border-radius: 28px;
+  box-shadow: 0 34px 90px rgba(16, 20, 31, 0.12);
+  backdrop-filter: blur(22px);
 }
 
-.heroStats {
+.fundzAppHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px 18px;
+}
+
+.fundzAppHeader img {
+  width: 88px;
+  height: auto;
+}
+
+.intentPanel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  background: var(--surface);
+  gap: 8px;
+  padding: 22px;
+  background: var(--surface-muted);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 22px;
+}
+
+.intentPanel span,
+.capitalSummary span,
+.previewStep span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.intentPanel strong {
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.intentPanel small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.flowDivider {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: -8px auto;
+  color: var(--green-dark);
+  background: var(--surface);
+  border: 4px solid rgba(255, 255, 255, 0.72);
+  border-radius: 14px;
   box-shadow: var(--shadow-soft);
 }
 
-.heroStats div {
-  min-height: 116px;
-  padding: 20px;
-  border-right: 1px solid var(--line);
+.executionStack {
+  display: grid;
+  gap: 8px;
 }
 
-.heroStats div:last-child {
-  border-right: 0;
+.previewStep {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 18px;
 }
 
-.heroStats strong {
+.previewIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 14px;
+}
+
+.previewStep strong {
   display: block;
-  color: var(--primary);
-  font-size: 30px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-size: 15px;
 }
 
-.heroStats span {
-  display: block;
-  max-width: 140px;
-  margin-top: 14px;
-  color: var(--ink-soft);
+.previewStep p {
+  margin-top: 4px;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.35;
 }
 
-.challengeSection,
-.landingBand,
-.landingDetail,
-.finalCta {
-  width: min(1360px, calc(100% - 64px));
-  margin: 0 auto;
+.previewStep > span {
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 999px;
+  padding: 6px 9px;
 }
 
-.challengeSection {
+.capitalSummary {
   display: grid;
-  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
-  gap: 72px;
-  padding: 104px 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.sectionLead h2,
-.landingBand h2,
-.landingDetail h2,
-.finalCta h2 {
-  max-width: 620px;
-  margin-top: 16px;
-  color: var(--primary);
-  font-size: clamp(34px, 4.8vw, 64px);
-  font-weight: 900;
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-}
-
-.challengeTape {
-  overflow: hidden;
-  background: var(--surface);
+.capitalSummary div {
+  padding: 16px;
+  background: #f8fafc;
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: var(--shadow-soft);
 }
 
-.tapeHeader {
+.capitalSummary strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 22px;
+}
+
+.terminalPreview {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.terminalChrome {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  min-height: 64px;
+  gap: 16px;
+  min-height: 54px;
   padding: 0 20px;
   border-bottom: 1px solid var(--line);
 }
 
-.tapeHeader span,
-.challengeIdentity span,
-.challengeAllocationCompact span,
-.challengeRulesCompact span,
-.metric span,
-.stat span,
+.terminalChrome span,
+.terminalChrome strong,
+.terminalRiskHeader span,
+.terminalRiskHeader strong,
+.terminalLegend span,
+.metricTile span,
+.terminalMetrics span,
+.terminalMetrics small,
+.panelHeader > span,
+.addressLine span,
+.definitionList dt,
 th {
   color: var(--muted);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.tapeHeader strong {
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.challengeRow {
-  display: grid;
-  grid-template-columns: 1fr 0.75fr 1.45fr auto;
-  gap: 18px;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--line);
-  transition:
-    background 160ms ease,
-    transform 160ms ease;
-}
-
-.challengeRow:last-child {
-  border-bottom: 0;
-}
-
-.challengeRow:hover {
-  background: var(--surface-soft);
-}
-
-.challengeRow.featured {
-  background: var(--emerald-soft);
-}
-
-.challengeIdentity,
-.challengeAllocationCompact {
-  display: grid;
-  gap: 7px;
-}
-
-.challengeIdentity strong,
-.challengeAllocationCompact strong {
-  color: var(--ink);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-}
-
-.challengeIdentity strong {
-  font-size: 24px;
-}
-
-.challengeAllocationCompact strong {
-  font-size: 26px;
-}
-
-.challengeRulesCompact {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 20px;
-}
-
-.challengeRulesCompact div {
-  display: grid;
-  gap: 5px;
-}
-
-.challengeRulesCompact strong {
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.challengeAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 132px;
-  min-height: 40px;
-  padding: 0 14px;
-  color: var(--on-primary);
-  background: var(--primary);
-  border-radius: 8px;
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.landingBand,
-.landingDetail {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.45fr) minmax(0, 1fr);
-  gap: 72px;
-  padding: 104px 0;
-  border-top: 1px solid var(--line);
-}
-
-.explainGrid {
+.terminalMetrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 
-.processStep {
-  min-height: 250px;
-  padding: 28px 24px 0;
-  border-right: 1px solid var(--line);
+.terminalMetrics div {
+  min-height: 140px;
+  padding: 24px;
+  border-right: 1px solid rgba(0,0,0,0.04);
 }
 
-.processStep:last-child {
+.terminalMetrics div:last-child {
   border-right: 0;
 }
 
-.processStep > span {
-  color: var(--emerald);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12px;
-  font-weight: 900;
+.terminalMetrics span {
+  color: #647184;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.processStep h3 {
-  margin-top: 40px;
-  color: var(--ink);
-  font-size: 22px;
-  font-weight: 900;
+.terminalMetrics strong {
+  display: block;
+  margin-top: 16px;
+  color: #090a0b;
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 32px;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.processStep p {
-  margin-top: 16px;
-  color: var(--ink-soft);
-  font-size: 14px;
-  line-height: 1.55;
+.terminalMetrics small {
+  display: block;
+  margin-top: 12px;
+  color: #10b981;
+  font-weight: 600;
+}
+.terminalMetrics div.positive small,
+.terminalMetrics div.positive strong {
+  color: #10b981;
 }
 
-.conditionList {
+.terminalRisk {
+  padding: 32px;
+  background: #fbfcfc;
+}
+
+.terminalRiskHeader,
+.riskMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.terminalRiskHeader span {
+  color: #647184;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.terminalRiskHeader strong {
+  color: #090a0b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.riskRail,
+.riskBar {
+  display: flex;
+  height: 48px;
+  overflow: hidden;
+  background: var(--surface-muted);
+  border-radius: 16px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.riskRail span,
+.riskBar div {
   display: grid;
-  gap: 0;
+  place-items: center;
+  min-width: 60px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fundzSegment,
+.riskBarFundz {
+  flex: 8.5;
+  background: #10141f;
+}
+
+.marginSegment,
+.riskBarMargin {
+  flex: 1;
+  background: #7d8798;
+}
+
+.feeSegment,
+.riskBarFee {
+  flex: 0.7;
+  background: var(--green);
+}
+
+.terminalLegend,
+.riskLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.terminalLegend span,
+.riskLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #647184;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.payoutBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--green-soft);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 18px;
+}
+
+.payoutBox span {
+  display: block;
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.payoutBox strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.payoutBox p {
+  max-width: 480px;
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.terminalLegend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.legendFundz { background: #090a0b; }
+.legendMargin { background: #9ca3af; }
+.legendFee { background: #10b981; }
+
+.landingStrip,
+.finalCta {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.4fr) minmax(0, 1fr);
+  gap: 64px;
+  padding: 96px 60px;
+  border-top: 1px solid rgba(226, 231, 240, 0.8);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.stripHeader {
+  max-width: 400px;
+}
+
+.stripHeader .eyebrow {
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stripHeader h2 {
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 740;
+  letter-spacing: -0.02em;
+  color: #090a0b;
+}
+
+.workflowGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.workflowGrid article {
+  min-height: 160px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-soft);
+}
+
+.workflowGrid article:last-child {
+  border-right: 1px solid var(--line);
+}
+
+.workflowGrid span {
+  color: #10b981;
+  font-size: 14px;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.1);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.workflowGrid strong {
+  display: block;
+  margin-top: auto;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #090a0b;
+}
+
+.modelList {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  background: transparent;
+}
+
+.modelLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 76px;
+  padding: 0 22px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.modelLine:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.modelLine span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #647184;
+}
+.modelLine strong {
+  font-size: 18px;
+  font-family: "Roboto Mono", monospace;
+  font-weight: 600;
+  color: #090a0b;
+}
+
+.modelLine.strong {
+  background: var(--green-soft);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+.modelLine.strong span {
+  color: #090a0b;
+  font-weight: 700;
+}
+.modelLine.strong strong {
+  color: #10b981;
+}
+
+.controlList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   padding: 0;
   margin: 0;
   list-style: none;
-  border-top: 1px solid var(--line);
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  background: transparent;
 }
 
-.conditionList li {
+.controlList li {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 58px;
-  color: var(--ink);
-  border-bottom: 1px solid var(--line);
-  font-weight: 800;
+  gap: 16px;
+  min-height: 72px;
+  padding: 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+  color: #090a0b;
+  font-size: 15px;
 }
 
-.conditionList svg {
-  color: var(--emerald);
+.controlList li:nth-child(even) {
+  border-right: 1px solid var(--line);
+}
+.controlList li:nth-last-child(-n + 2) {
+  border-bottom: 1px solid var(--line);
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 999px;
 }
 
 .finalCta {
-  display: grid;
-  justify-items: start;
-  gap: 22px;
-  padding: 96px 0 112px;
-  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 60px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(230,248,240,0.55));
+  border-top: 1px solid rgba(226, 231, 240, 0.8);
 }
 
-.finalCta svg {
-  color: var(--emerald);
+.ctaContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 600px;
 }
 
-.appShell {
-  width: min(1480px, 100%);
+.ctaIcon {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 16px;
+  border-radius: 20px;
+  width: 72px;
+  height: 72px;
+}
+
+.finalCta h2 {
+  font-size: 42px;
+  font-weight: 850;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #090a0b;
+}
+
+.finalCta .primaryButton {
+  margin-top: 16px;
+  padding: 0 32px;
+  min-height: 52px;
+  font-size: 15px;
+  background: #090a0b;
+  color: #ffffff;
+  border-color: #090a0b;
+}
+.finalCta .primaryButton:hover {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+/* App shell */
+
+.terminalShell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.11), transparent 30%),
+    radial-gradient(circle at 88% 0%, rgba(88, 123, 255, 0.08), transparent 28%),
+    var(--bg);
+}
+
+.terminalMain {
+  width: min(1440px, 100%);
+  min-width: 0;
   margin: 0 auto;
-  padding: 20px 28px 56px;
-  background: var(--background);
+  padding: 0 28px 56px;
 }
 
-.appTopbar {
+.terminalTopbar {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -602,568 +946,570 @@ th {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 62px;
-  background: rgba(248, 249, 247, 0.9);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--line);
+  min-height: 72px;
+  margin: 0 -28px;
+  padding: 0 28px;
+  background: var(--nav);
+  border-bottom: 1px solid rgba(226, 231, 240, 0.8);
+  backdrop-filter: blur(20px);
 }
 
-.appActions {
+.topbarBrandCluster {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
 }
 
-.errorBanner,
-.warningBanner {
-  margin-top: 18px;
-  padding: 12px 14px;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--primary);
-  border-radius: 8px;
+.topbarBrandCluster .brandMark {
+  min-width: 82px;
+}
+
+.topbarBrandCluster .brandMark img {
+  width: 82px;
+}
+
+.appTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.appTabs span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  color: var(--muted);
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 800;
 }
 
-.workspaceHero {
+.appTabs span.active {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.topbarContext {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbarContext strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.terminalHeader {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 28px;
-  padding: 54px 0 30px;
-  border-bottom: 1px solid var(--line);
+  padding: 42px 0 28px;
 }
 
-.workspaceHero h1 {
-  max-width: 860px;
-  margin-top: 12px;
-  color: var(--primary);
-  font-size: clamp(38px, 5.6vw, 72px);
-  font-weight: 900;
-  line-height: 0.98;
-  letter-spacing: -0.05em;
+.terminalHeader h1 {
+  margin-top: 8px;
+  font-size: clamp(30px, 3vw, 46px);
+  line-height: 1.05;
+  font-weight: 760;
+  letter-spacing: -0.015em;
 }
 
-.workspaceHero p:not(.eyebrow) {
-  max-width: 700px;
-  margin-top: 14px;
+.terminalHeader p:not(.eyebrow) {
+  max-width: 680px;
+  margin-top: 8px;
   color: var(--ink-soft);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
-.readiness {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
+.headerBadges {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  min-height: 34px;
-  padding: 0 12px;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12px;
-  font-weight: 900;
+  justify-content: flex-end;
 }
 
-.readiness.ready {
-  color: var(--emerald);
-  background: var(--emerald-soft);
-  border-color: var(--emerald);
-}
-
-.appGrid {
+.overviewGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 390px;
-  gap: 24px;
-  align-items: start;
-  margin-top: 24px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.primaryColumn,
-.sideRail {
+.metricTile {
+  min-height: 132px;
+  padding: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
+}
+
+.metricTile strong {
+  display: block;
+  margin-top: 16px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(22px, 1.9vw, 29px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.metricTile small {
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.metricTile.positive small,
+.metricTile.positive strong {
+  color: var(--green-dark);
+}
+
+.metricTile.negative small,
+.metricTile.negative strong {
+  color: var(--red);
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 16px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+.workspaceStack,
+.inspectorRail {
   display: grid;
   gap: 20px;
 }
 
-.sideRail {
+.inspectorRail {
   position: sticky;
-  top: 86px;
+  top: 88px;
 }
 
-.workspacePanel,
-.railPanel {
+.terminalPanel {
   padding: 22px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panelHeader h2 {
+  margin-top: 4px;
+  font-size: 21px;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+}
+
+.setupGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.setupStep {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 218px;
+  padding: 18px;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.setupStep > svg {
+  color: var(--green-dark);
+}
+
+.setupStep h3 {
+  font-size: 17px;
+}
+
+.setupStep p {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.setupStep label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.setupStep input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 8px 28px rgba(5, 5, 5, 0.035);
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.sectionHeader h2 {
-  margin-top: 6px;
-  color: var(--primary);
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-}
-
-.sectionMeta {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.onboardingGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.stepBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 238px;
-  padding: 18px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-
-.stepIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: var(--emerald);
-  background: var(--emerald-soft);
-  border-radius: 10px;
-}
-
-.stepBlock h3 {
-  color: var(--primary);
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.stepBlock p,
-.mutedText,
-.emptyState {
-  color: var(--ink-soft);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.stepBlock label {
-  display: grid;
-  gap: 7px;
-  color: var(--muted);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.stepBlock input {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
   outline: none;
 }
 
-.stepBlock input:focus {
-  border-color: var(--emerald);
+.setupStep input:focus {
+  border-color: var(--green);
 }
 
-.secondaryButton {
+.setupStep button {
   width: fit-content;
-  min-height: 42px;
   margin-top: auto;
 }
 
-.metricsGrid,
-.globalGrid,
-.executionStats,
-.positionGrid {
-  display: grid;
-  gap: 14px;
-}
-
-.metricsGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.globalGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 18px;
-}
-
-.metric,
-.stat {
-  min-height: 116px;
-  padding: 18px;
-  overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-
-.metricPositive {
-  border-color: rgba(0, 122, 77, 0.34);
-  background: var(--emerald-soft);
-}
-
-.metricIcon {
-  display: inline-flex;
-  color: var(--ink);
-}
-
-.metricPositive .metricIcon {
-  color: var(--emerald);
-}
-
-.metric span,
-.stat span {
-  display: block;
-  margin-top: 18px;
-}
-
-.metric strong,
-.stat strong {
-  display: block;
-  max-width: 100%;
-  margin-top: 6px;
-  overflow-wrap: anywhere;
-  color: var(--primary);
-  font-size: clamp(24px, 3vw, 34px);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.035em;
-}
-
-.executionStats {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 14px;
-}
-
-.stat {
-  min-height: auto;
-  padding: 14px;
-}
-
-.stat strong {
-  font-size: 18px;
-}
-
-.positionGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.positionTile {
-  display: grid;
-  gap: 14px;
-  min-height: 148px;
-  padding: 18px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-
-.positionTile span,
-.positionTile small,
-.agentIdentity span {
+.stepStatus {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   color: var(--muted);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.stepStatus.complete {
+  color: var(--green-dark);
+}
+
+.addressLine {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.addressLine strong {
+  overflow-wrap: anywhere;
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+}
+
+.riskMeta {
+  margin-top: 6px;
+}
+
+.riskMeta span {
+  color: var(--ink-soft);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+}
+
+.riskMeta strong {
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.riskBar {
+  height: 42px;
+}
+
+.riskLegend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legendFundz {
+  background: #1f2a37;
+}
+
+.legendMargin {
+  background: #5f6876;
+}
+
+.legendFee {
+  background: var(--green);
+}
+
+.pnlChart {
+  display: grid;
+  gap: 18px;
+}
+
+.pnlChartSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pnlChartSummary div {
+  min-height: 82px;
+  padding: 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.pnlChartSummary span {
+  display: block;
+  color: var(--muted);
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.positionTile strong {
+.pnlChartSummary strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 12px;
   overflow-wrap: anywhere;
-  color: var(--primary);
-  font-size: 21px;
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
-
-.positionTile dl {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-}
-
-.positionTile dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.flowTrack {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-
-.flowNode {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 9px;
-  min-height: 92px;
-  padding: 12px 8px;
-  color: var(--ink-soft);
-  background: var(--surface);
-  border-right: 1px solid var(--line);
-  text-align: center;
-}
-
-.flowNode:last-child {
-  border-right: 0;
-}
-
-.flowNode span {
-  display: inline-flex;
-  color: var(--muted);
-}
-
-.flowNode strong {
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.flowNode.complete {
   color: var(--ink);
-  background: var(--emerald-soft);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 24px;
+  line-height: 1;
 }
 
-.flowNode.complete span {
-  color: var(--emerald);
+.pnlChartSummary strong.positive {
+  color: var(--green-dark);
 }
 
-.agentIdentity {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 12px;
-  align-items: center;
-  min-height: 56px;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--line);
+.pnlChartSummary strong.negative {
+  color: var(--red);
 }
 
-.agentIdentity svg {
-  color: var(--emerald);
-}
-
-.agentIdentity strong {
+.pnlChartSvg {
   display: block;
-  margin-top: 4px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 900;
+  width: 100%;
+  min-height: 260px;
+  overflow: visible;
 }
 
-.inlineWarning {
-  margin-top: 0;
-  margin-bottom: 14px;
-  border-color: var(--line-strong);
+.pnlGrid,
+.pnlAxis {
+  stroke: var(--line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
-.checklist {
-  display: grid;
-  gap: 10px;
+.pnlAxis {
+  stroke: var(--line-strong);
 }
 
-.checkItem {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 10px;
-  align-items: start;
-  padding-bottom: 10px;
-  color: var(--ink-soft);
-  border-bottom: 1px solid var(--line);
-  font-size: 14px;
-  line-height: 1.4;
+.pnlArea {
+  opacity: 0.14;
 }
 
-.checkItem.complete {
-  color: var(--ink);
+.pnlArea.positive {
+  fill: var(--green);
+}
+
+.pnlArea.negative {
+  fill: var(--red);
+}
+
+.pnlLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.pnlLine.positive {
+  stroke: var(--green-dark);
+}
+
+.pnlLine.negative {
+  stroke: var(--red);
+}
+
+.pnlPoint {
+  fill: var(--surface);
+  stroke: var(--green-dark);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.pnlPoint.breached {
+  stroke: var(--red);
+}
+
+.pnlAxisLabel,
+.pnlDateLabel {
+  fill: var(--muted);
+  font-size: 11px;
   font-weight: 800;
 }
 
-.checkItem.complete svg {
-  color: var(--emerald);
-}
-
-.assignedSafe {
-  display: grid;
-  gap: 7px;
-  padding-top: 12px;
-  margin-top: auto;
-  border-top: 1px solid var(--line);
-}
-
-.assignedSafe span {
-  color: var(--muted);
-  font-family:
-    Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.assignedSafe strong {
-  overflow-wrap: anywhere;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.policyList,
-.executionFocus dl {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-}
-
-.policyList div,
-.executionFocus dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
-}
-
-dt {
-  color: var(--ink-soft);
-  font-size: 13px;
-}
-
-dd {
-  max-width: 220px;
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 900;
-  text-align: right;
-}
-
-.executionFocus h2 {
-  margin: 14px 0;
-  color: var(--primary);
-  font-size: 24px;
-  font-weight: 900;
-}
-
-.executionFocus p {
-  margin-top: 14px;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
-  color: var(--ink);
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.statusPositive {
-  color: var(--emerald);
-  background: var(--emerald-soft);
-  border-color: var(--emerald);
-}
-
-.statusNegative {
-  color: var(--ink);
-  background: var(--surface);
-  border-color: var(--primary);
-}
-
-.tableWrap {
+.positionsTableWrap,
+.activityTableWrap {
   overflow-x: auto;
   border-top: 1px solid var(--line);
+  border-radius: 0 0 18px 18px;
 }
 
-table {
+.positionsTable,
+.activityTable {
   width: 100%;
-  min-width: 760px;
+  min-width: 660px;
   border-collapse: collapse;
-  background: var(--surface);
 }
 
 th {
-  padding: 12px;
+  padding: 12px 10px;
   text-align: left;
   border-bottom: 1px solid var(--line);
+  background: rgba(240, 243, 248, 0.54);
 }
 
 td {
-  padding: 16px 12px;
-  font-size: 14px;
+  padding: 14px 10px;
+  color: var(--ink-soft);
   border-bottom: 1px solid var(--line);
+  font-size: 13px;
   vertical-align: top;
+  background: rgba(255, 255, 255, 0.36);
 }
 
 td strong {
   display: block;
   color: var(--ink);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
 }
 
 td span {
   display: block;
-  max-width: 340px;
   margin-top: 4px;
-  overflow-wrap: anywhere;
-  color: var(--ink-soft);
+  color: var(--muted);
   font-size: 12px;
 }
 
+.activityAction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.activityAction strong {
+  display: inline;
+}
+
+.copyTxButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.copyTxButton:hover {
+  color: var(--green-dark);
+  border-color: rgba(16, 185, 129, 0.34);
+  transform: translateY(-1px);
+}
+
+.definitionList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.definitionList div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.definitionList dd {
+  max-width: 190px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.identityBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.credentialReveal {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: var(--green-soft);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 16px;
+}
+
+.credentialReveal span {
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credentialReveal strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.credentialReveal p {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .emptyState {
-  padding: 18px 0;
+  padding: 16px 0;
+}
+
+.emptyState strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.emptyState p {
+  max-width: 520px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1177,180 +1523,123 @@ td span {
 }
 
 @media (max-width: 1180px) {
-  .heroPoster,
-  .challengeSection,
-  .landingBand,
-  .landingDetail,
-  .appGrid {
+  .landingHero,
+  .landingStrip,
+  .finalCta,
+  .contentGrid {
     grid-template-columns: 1fr;
   }
 
-  .heroPoster {
-    min-height: auto;
-    padding-top: 76px;
-  }
-
-  .heroCopy {
-    max-width: 900px;
-  }
-
-  .heroArtifact {
-    width: min(920px, 100%);
-  }
-
-  .sideRail {
-    position: static;
-  }
-
-  .onboardingGrid,
-  .explainGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .processStep {
-    min-height: auto;
-    padding: 24px 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-}
-
-@media (max-width: 760px) {
   .landingHero {
     min-height: auto;
   }
 
-  .landingNav {
-    padding: 0 14px;
+  .finalCta {
+    grid-template-columns: 1fr;
   }
 
-  .landingNavLinks {
+  .inspectorRail {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .landingTopbar,
+  .terminalTopbar,
+  .terminalHeader,
+  .payoutBox,
+  .panelHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .landingHero,
+  .landingStrip,
+  .finalCta,
+  .terminalMain {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .landingHeroCopy h1 {
+    font-size: 44px;
+  }
+
+  .heroAppScene {
+    display: grid;
+    gap: 12px;
+    min-height: auto;
+    padding-top: 18px;
+  }
+
+  .floatingChip {
     display: none;
   }
 
-  .heroPoster,
-  .challengeSection,
-  .landingBand,
-  .landingDetail,
-  .finalCta {
-    width: min(100% - 28px, 1360px);
+  .fundzAppCard {
+    width: 100%;
   }
 
-  .heroPoster {
-    gap: 38px;
-    padding: 56px 0;
+  .previewStep {
+    grid-template-columns: 38px minmax(0, 1fr);
   }
 
-  .heroCopy h1 {
-    font-size: 48px;
+  .previewStep > span {
+    grid-column: 2;
+    width: fit-content;
   }
 
-  .heroCopy p:not(.brandKicker):not(.heroNote) {
-    font-size: 16px;
+  .stripHeader h2,
+  .finalCta h2 {
+    font-size: 32px;
   }
 
+  .terminalMetrics,
+  .overviewGrid,
+  .pnlChartSummary,
+  .setupGrid,
+  .workflowGrid,
+  .controlList {
+    grid-template-columns: 1fr;
+  }
+
+  .terminalMetrics div,
+  .workflowGrid article,
+  .controlList li {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .terminalMetrics div:last-child,
+  .workflowGrid article:last-child,
+  .controlList li:last-child {
+    border-bottom: 0;
+  }
+
+  .topbarActions,
+  .landingActions,
   .heroActions,
   .primaryButton,
-  .secondaryHeroButton,
   .secondaryButton,
   .ghostButton {
     width: 100%;
   }
 
-  .brandPlane {
-    min-height: 250px;
-    padding: 22px;
-  }
-
-  .brandPlane::after {
-    right: -28px;
-    bottom: -42px;
-    font-size: 96px;
-  }
-
-  .brandPlane small {
-    font-size: 17px;
-  }
-
-  .heroStats,
-  .metricsGrid,
-  .globalGrid,
-  .executionStats,
-  .positionGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .flowTrack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .flowNode:nth-child(even) {
-    border-right: 0;
-  }
-
-  .heroStats div {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .heroStats div:last-child {
-    border-bottom: 0;
-  }
-
-  .challengeRow {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .challengeRulesCompact {
-    grid-template-columns: 1fr;
-  }
-
-  .challengeAction {
+  .topbarBrandCluster,
+  .appTabs,
+  .topbarContext {
     width: 100%;
   }
 
-  .challengeSection,
-  .landingBand,
-  .landingDetail,
-  .finalCta {
-    padding: 64px 0;
+  .appTabs {
+    overflow-x: auto;
   }
 
-  .appShell {
-    padding: 14px 14px 44px;
+  .terminalHeader h1 {
+    font-size: 28px;
   }
 
-  .appTopbar,
-  .workspaceHero,
-  .sectionHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .appActions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .workspaceHero h1 {
-    font-size: 40px;
-  }
-
-  .metric {
-    min-height: 104px;
-  }
-}
-
-@media (max-width: 480px) {
-  .heroCopy h1 {
-    font-size: 40px;
-  }
-
-  .sectionLead h2,
-  .landingBand h2,
-  .landingDetail h2,
-  .finalCta h2 {
-    font-size: 34px;
+  .metricTile strong {
+    font-size: 24px;
   }
 }

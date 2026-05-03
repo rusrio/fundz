@@ -21,8 +21,17 @@ export type PortfolioDashboardState = {
   pnl: string;
   pnlBps: number;
   drawdown: string;
+  pnlHistory: PnlHistoryPoint[];
   positions: PortfolioPosition[];
   error: string | null;
+};
+
+export type PnlHistoryPoint = {
+  createdAt: string;
+  totalValue: string;
+  pnl: string;
+  pnlBps: number;
+  breached: boolean;
 };
 
 export type PortfolioPosition = {
@@ -44,8 +53,13 @@ export type RiskDashboardState = {
   agentLossMargin: string;
   accessFee: string;
   protectedValue: string;
+  initialValue: string;
   totalValue: string;
   lossBufferRemaining: string;
+  claimablePayout: string;
+  claimedPayout: string;
+  totalPayoutReceived: string;
+  payoutShareBps: number;
   breached: boolean;
   latestSnapshot: {
     id: string;
@@ -64,25 +78,16 @@ export type RiskDashboardState = {
 };
 
 export type EthereumProvider = {
-  request(args: { method: "eth_requestAccounts" }): Promise<string[]>;
+  isMetaMask?: boolean;
+  isRabby?: boolean;
+  providers?: EthereumProvider[];
+  request(args: { method: "eth_accounts" | "eth_requestAccounts" }): Promise<unknown>;
 };
 
 export type WalletState = {
   status: "idle" | "missing" | "connecting" | "connected" | "error";
   account: string | null;
   error: string | null;
-};
-
-export type AgentPerformance = {
-  totalIntents: number;
-  approvalRate: number;
-  rejectedCount: number;
-  executionsSubmitted: number;
-  executionsPending: number;
-  executionsFailed: number;
-  totalAmountIn: string;
-  latestExecutionStatus: string;
-  lastActivity: string;
 };
 
 export type FundingChallenge = {
@@ -95,9 +100,4 @@ export type FundingChallenge = {
   timeLimit: string;
   action: string;
   featured?: boolean;
-};
-
-export type ReadinessItem = {
-  label: string;
-  complete: boolean;
 };

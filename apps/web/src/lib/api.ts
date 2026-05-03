@@ -1,15 +1,30 @@
 export const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(init?.headers ?? {})
-    }
-  });
+  let response: Response;
 
-  const body = (await response.json()) as unknown;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        ...(init?.headers ?? {})
+      }
+    });
+  } catch (error) {
+    throw new Error(`Unable to reach API at ${apiBaseUrl}`);
+  }
+
+  const rawBody = await response.text();
+  let body: unknown = null;
+
+  if (rawBody.length > 0) {
+    try {
+      body = JSON.parse(rawBody) as unknown;
+    } catch {
+      throw new Error(`API returned a non-JSON response from ${apiBaseUrl}${path}`);
+    }
+  }
 
   if (!response.ok) {
     const errorMessage =

@@ -72,6 +72,7 @@ const {
   listAgentCredentials,
   linkAgentSafe,
   registerAgent,
+  requestAgentPayout,
   revokeAgentCredential,
   submitIntent
 } = await import("@fundz/core");
@@ -217,6 +218,26 @@ const server = createServer(async (request, response) => {
         sendJson(response, 200, { agent });
         return;
       }
+    }
+
+    if (request.method === "POST" && url.pathname.startsWith("/agents/") && url.pathname.endsWith("/payouts")) {
+      const agentId = url.pathname.split("/")[2];
+
+      if (!agentId) {
+        sendError(response, 400, "agentId is required");
+        return;
+      }
+
+      const body = (await readJson(request)) as { ownerAddress?: string };
+
+      if (!body.ownerAddress) {
+        sendError(response, 400, "ownerAddress is required");
+        return;
+      }
+
+      const payout = await requestAgentPayout({ agentId, ownerAddress: body.ownerAddress });
+      sendJson(response, 201, payout);
+      return;
     }
 
     const handler = handlers[routeKey(request)];
