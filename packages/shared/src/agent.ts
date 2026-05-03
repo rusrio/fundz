@@ -22,7 +22,11 @@ export const registerAgentRequestSchema = z.object({
 
 export const registerAgentResponseSchema = z.object({
   agent: agentSchema,
-  policy: policySchema
+  policy: policySchema,
+  credential: z.object({
+    token: z.string().min(1),
+    credentialId: z.string().uuid()
+  })
 });
 
 export type AgentStatus = z.infer<typeof agentStatusSchema>;

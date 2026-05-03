@@ -7,10 +7,15 @@ import {
   registerAgentRequestSchema
 } from "@fundz/shared";
 import { toAgent, toPolicy } from "./mappers.js";
+import { upsertDefaultRiskPolicyForAgent } from "./risk.js";
 
 function envValue(name: string, fallback: string): string {
   const value = process.env[name];
   return value && value.length > 0 ? value : fallback;
+}
+
+function normalizeOwnerAddress(address: string): string {
+  return address.toLowerCase();
 }
 
 const defaultAllowedTokens = [
@@ -41,19 +46,33 @@ export async function registerAgent(input: RegisterAgentRequest): Promise<{
 }> {
   const request = registerAgentRequestSchema.parse(input);
   const safeAddress = protocolFundedSafeAddress();
+  const ownerAddress = normalizeOwnerAddress(request.ownerAddress);
 
-  const agent = await prisma.agent.upsert({
-    where: { ownerAddress: request.ownerAddress },
-    update: {
-      name: request.name,
-      safeAddress
+  const existingAgent = await prisma.agent.findFirst({
+    where: {
+      ownerAddress: {
+        in: [request.ownerAddress, ownerAddress]
+      }
     },
-    create: {
-      name: request.name,
-      ownerAddress: request.ownerAddress,
-      safeAddress
-    }
+    orderBy: { createdAt: "desc" }
   });
+  const agent = existingAgent
+    ? await prisma.agent.update({
+      where: { id: existingAgent.id },
+      data: {
+        name: request.name,
+        ownerAddress,
+        safeAddress,
+        status: "ACTIVE"
+      }
+    })
+    : await prisma.agent.create({
+      data: {
+      name: request.name,
+      ownerAddress,
+      safeAddress
+      }
+    });
 
   const policy = await prisma.policy.upsert({
     where: { agentId: agent.id },
@@ -63,6 +82,11 @@ export async function registerAgent(input: RegisterAgentRequest): Promise<{
       ...defaultPolicy
     }
   });
+  await upsertDefaultRiskPolicyForAgent({
+    id: agent.id,
+    safeAddress: agent.safeAddress,
+    policy
+  });
 
   return {
     agent: toAgent(agent),
@@ -71,9 +95,16 @@ export async function registerAgent(input: RegisterAgentRequest): Promise<{
 }
 
 export async function authenticateAgent(ownerAddress: string): Promise<Agent | null> {
-  const agent = await prisma.agent.findUnique({
-    where: { ownerAddress }
+  const normalizedOwnerAddress = normalizeOwnerAddress(ownerAddress);
+  const agents = await prisma.agent.findMany({
+    where: {
+      ownerAddress: {
+        in: [ownerAddress, normalizedOwnerAddress]
+      }
+    },
+    orderBy: { createdAt: "desc" }
   });
+  const agent = agents.find((candidate) => candidate.ownerAddress.toLowerCase() === normalizedOwnerAddress);
 
   return agent ? toAgent(agent) : null;
 }

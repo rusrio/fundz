@@ -39,6 +39,13 @@ enum RiskEventStatus {
   FAILED
 }
 
+enum PayoutStatus {
+  PENDING
+  SUBMITTED
+  CONFIRMED
+  FAILED
+}
+
 model Agent {
   id           String   @id @default(uuid())
   name         String
@@ -55,6 +62,7 @@ model Agent {
   executions Execution[]
   riskSnapshots RiskSnapshot[]
   riskEvents RiskEvent[]
+  payouts Payout[]
 }
 
 model RiskPolicy {
@@ -109,6 +117,27 @@ model RiskEvent {
   errorMessage   String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@index([status])
+}
+
+model Payout {
+  id           String       @id @default(uuid())
+  agentId      String
+  safeAddress  String
+  recipient    String
+  baseAsset    String
+  amount       String
+  profit       String
+  shareBps     Int
+  status       PayoutStatus @default(PENDING)
+  txHash       String?
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 

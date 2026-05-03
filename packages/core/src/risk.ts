@@ -23,6 +23,21 @@ type RiskConfig = {
   pollSeconds?: number;
 };
 
+type RiskPolicyAgent = {
+  id: string;
+  safeAddress: string | null;
+  policy?: {
+    chainId: number;
+  } | null;
+};
+
+function envValue(name: string, fallback: string): string {
+  const value = process.env[name];
+  return value && value.length > 0 ? value : fallback;
+}
+
+const agentProfitShareBps = 8_000;
+
 function balanceOfData(address: string): `0x${string}` {
   return `0x70a08231000000000000000000000000${address.slice(2).toLowerCase()}`;
 }
@@ -58,9 +73,9 @@ function addAmounts(...amounts: string[]): string {
 }
 
 function riskBudget(input: RiskConfig) {
-  const protocolCapital = input.protocolCapital ?? addAmounts(input.initialValue, `-${input.maxLoss}`);
   const agentLossMargin = input.agentLossMargin ?? input.maxLoss;
   const accessFee = input.accessFee ?? "0";
+  const protocolCapital = input.protocolCapital ?? addAmounts(input.initialValue, `-${agentLossMargin}`, `-${accessFee}`);
   const protectedValue = addAmounts(protocolCapital, accessFee);
 
   return {
@@ -74,6 +89,41 @@ function riskBudget(input: RiskConfig) {
   };
 }
 
+async function safeInitialValue(input: {
+  baseAsset: string;
+  riskAsset: string;
+  safeAddress: string | null;
+  chainId: number;
+  emergencySlippageBps: number;
+}): Promise<string | null> {
+  const { baseAsset, riskAsset, safeAddress, chainId, emergencySlippageBps } = input;
+
+  if (!safeAddress) {
+    return null;
+  }
+
+  try {
+    const [baseBalance, riskBalance] = await Promise.all([
+      tokenBalance(baseAsset, safeAddress),
+      tokenBalance(riskAsset, safeAddress)
+    ]);
+    const riskValue = BigInt(riskBalance) > 0n
+      ? (await getUniswapQuote({
+        chainId,
+        tokenIn: riskAsset,
+        tokenOut: baseAsset,
+        amountIn: riskBalance,
+        maxSlippageBps: emergencySlippageBps,
+        swapper: safeAddress
+      })).amountOut ?? "0"
+      : "0";
+
+    return (BigInt(baseBalance) + BigInt(riskValue)).toString();
+  } catch {
+    return null;
+  }
+}
+
 async function tokenBalance(token: string, owner: string): Promise<string> {
   const result = await rpc<string>("eth_call", [
     {
@@ -84,6 +134,53 @@ async function tokenBalance(token: string, owner: string): Promise<string> {
   ]);
 
   return BigInt(result).toString();
+}
+
+async function claimedPayoutAmount(agentId: string): Promise<bigint> {
+  const payouts = await prisma.payout.findMany({
+    where: {
+      agentId,
+      status: {
+        in: ["PENDING", "SUBMITTED", "CONFIRMED"]
+      }
+    },
+    select: { amount: true }
+  });
+
+  return payouts.reduce((sum, payout) => sum + BigInt(payout.amount), 0n);
+}
+
+async function receivedPayoutAmount(agentId: string): Promise<bigint> {
+  const payouts = await prisma.payout.findMany({
+    where: {
+      agentId,
+      status: {
+        in: ["SUBMITTED", "CONFIRMED"]
+      }
+    },
+    select: { amount: true }
+  });
+
+  return payouts.reduce((sum, payout) => sum + BigInt(payout.amount), 0n);
+}
+
+export async function payoutSummary(agentId: string, totalValue: string, initialValue: string) {
+  const profit = BigInt(totalValue) - BigInt(initialValue);
+  const positiveProfit = profit > 0n ? profit : 0n;
+  const grossClaimable = (positiveProfit * BigInt(agentProfitShareBps)) / 10_000n;
+  const [claimed, received] = await Promise.all([
+    claimedPayoutAmount(agentId),
+    receivedPayoutAmount(agentId)
+  ]);
+  const claimable = grossClaimable > claimed ? grossClaimable - claimed : 0n;
+
+  return {
+    profit: positiveProfit.toString(),
+    claimable: claimable.toString(),
+    claimed: claimed.toString(),
+    received: received.toString(),
+    shareBps: agentProfitShareBps
+  };
 }
 
 export async function upsertRiskPolicy(input: RiskConfig) {
@@ -122,6 +219,49 @@ export async function upsertRiskPolicy(input: RiskConfig) {
       emergencySlippageBps: input.emergencySlippageBps,
       ...(input.pollSeconds ? { pollSeconds: input.pollSeconds } : {})
     }
+  });
+}
+
+export async function upsertDefaultRiskPolicyForAgent(agent: RiskPolicyAgent) {
+  const baseAsset = envValue("DEMO_TOKEN_IN", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+  const riskAsset = envValue("DEMO_TOKEN_OUT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
+  const agentLossMargin = envValue("AGENT_LOSS_MARGIN", "10000000000");
+  const accessFee = envValue("AGENT_ACCESS_FEE", "1000000000");
+  const chainId = agent.policy?.chainId ?? 1;
+  const emergencySlippageBps = Number(envValue("RISK_EMERGENCY_SLIPPAGE_BPS", "100"));
+  const configuredProtocolCapital = process.env.FUNDZ_PROTOCOL_CAPITAL;
+  const defaultProtocolCapital = configuredProtocolCapital && configuredProtocolCapital.length > 0
+    ? configuredProtocolCapital
+    : "89000000000";
+  const fallbackInitialValue = envValue("DEMO_SAFE_TOKEN_BALANCE", addAmounts(defaultProtocolCapital, agentLossMargin, accessFee));
+  const initialValue = process.env.RISK_INITIAL_VALUE && process.env.RISK_INITIAL_VALUE.length > 0
+    ? process.env.RISK_INITIAL_VALUE
+    : await safeInitialValue({
+      baseAsset,
+      riskAsset,
+      safeAddress: agent.safeAddress,
+      chainId,
+      emergencySlippageBps
+    }) ?? fallbackInitialValue;
+
+  return upsertRiskPolicy({
+    agentId: agent.id,
+    chainId,
+    baseAsset,
+    riskAsset,
+    protocolCapital: configuredProtocolCapital && configuredProtocolCapital.length > 0 ? configuredProtocolCapital : undefined,
+    agentLossMargin,
+    accessFee,
+    initialValue,
+    maxLoss: envValue("RISK_MAX_LOSS", agentLossMargin),
+    minValue: envValue("RISK_MIN_VALUE", addAmounts(
+      configuredProtocolCapital && configuredProtocolCapital.length > 0
+        ? configuredProtocolCapital
+        : addAmounts(initialValue, `-${agentLossMargin}`, `-${accessFee}`),
+      accessFee
+    )),
+    emergencySlippageBps,
+    pollSeconds: Math.max(1, Math.floor(Number(envValue("RISK_MONITOR_INTERVAL_MS", "10000")) / 1000))
   });
 }
 
@@ -274,6 +414,15 @@ export async function monitorRiskOnce(agentId: string) {
   return { snapshot, event };
 }
 
+export async function monitorAllRiskPoliciesOnce() {
+  const policies = await prisma.riskPolicy.findMany({
+    where: { enabled: true },
+    select: { agentId: true }
+  });
+
+  return Promise.all(policies.map((policy) => monitorRiskOnce(policy.agentId)));
+}
+
 export async function listRiskDashboardStates() {
   const policies = await prisma.riskPolicy.findMany({
     include: {
@@ -297,6 +446,7 @@ export async function listRiskDashboardStates() {
     const lossBufferRemaining = BigInt(totalValue) > BigInt(policy.protectedValue)
       ? (BigInt(totalValue) - BigInt(policy.protectedValue)).toString()
       : "0";
+    const payout = await payoutSummary(policy.agentId, totalValue, policy.initialValue);
 
     return {
       agentId: policy.agentId,
@@ -309,8 +459,13 @@ export async function listRiskDashboardStates() {
       agentLossMargin: policy.agentLossMargin,
       accessFee: policy.accessFee,
       protectedValue: policy.protectedValue,
+      initialValue: policy.initialValue,
       totalValue,
       lossBufferRemaining,
+      claimablePayout: payout.claimable,
+      claimedPayout: payout.claimed,
+      totalPayoutReceived: payout.received,
+      payoutShareBps: payout.shareBps,
       breached: latestSnapshot?.breached ?? false,
       latestSnapshot,
       latestEvent

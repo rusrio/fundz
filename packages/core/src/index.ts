@@ -6,4 +6,5 @@ export * from "./intents.js";
 export * from "./policy-engine.js";
 export * from "./policies.js";
 export * from "./portfolio.js";
+export * from "./payouts.js";
 export * from "./risk.js";

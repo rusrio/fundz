@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "../packages/db/src/client.js";
-import { monitorRiskOnce, upsertRiskPolicy } from "../packages/core/src/risk.js";
+import { monitorAllRiskPoliciesOnce, monitorRiskOnce, upsertRiskPolicy } from "../packages/core/src/risk.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -50,9 +50,15 @@ function addAmounts(...amounts: string[]): string {
 
 async function demoAgent() {
   const ownerAddress = env("DEMO_OWNER_ADDRESS");
-  const agent = await prisma.agent.findUnique({
-    where: { ownerAddress }
+  const agents = await prisma.agent.findMany({
+    where: {
+      ownerAddress: {
+        in: [ownerAddress, ownerAddress.toLowerCase()]
+      }
+    },
+    orderBy: { createdAt: "desc" }
   });
+  const agent = agents.find((candidate) => candidate.ownerAddress.toLowerCase() === ownerAddress.toLowerCase());
 
   if (!agent) {
     throw new Error(`Demo agent not found for owner ${ownerAddress}`);
@@ -63,9 +69,9 @@ async function demoAgent() {
 
 async function setupRiskPolicy() {
   const agent = await demoAgent();
-  const protocolCapital = env("FUNDZ_PROTOCOL_CAPITAL", "100000000");
-  const agentLossMargin = env("AGENT_LOSS_MARGIN", "10000000");
-  const accessFee = env("AGENT_ACCESS_FEE", "1000000");
+  const protocolCapital = env("FUNDZ_PROTOCOL_CAPITAL", "89000000000");
+  const agentLossMargin = env("AGENT_LOSS_MARGIN", "10000000000");
+  const accessFee = env("AGENT_ACCESS_FEE", "1000000000");
   const initialValue = addAmounts(protocolCapital, agentLossMargin, accessFee);
   const protectedValue = addAmounts(protocolCapital, accessFee);
   const riskPolicy = await upsertRiskPolicy({
@@ -76,7 +82,7 @@ async function setupRiskPolicy() {
     protocolCapital,
     agentLossMargin,
     accessFee,
-    initialValue: env("RISK_INITIAL_VALUE", initialValue),
+    initialValue: env("RISK_INITIAL_VALUE", env("DEMO_SAFE_TOKEN_BALANCE", initialValue)),
     maxLoss: env("RISK_MAX_LOSS", agentLossMargin),
     minValue: env("RISK_MIN_VALUE", protectedValue),
     emergencySlippageBps: Number(env("RISK_EMERGENCY_SLIPPAGE_BPS", "100")),
@@ -87,15 +93,20 @@ async function setupRiskPolicy() {
 }
 
 async function monitorRisk() {
-  const agent = await demoAgent();
   const intervalMs = Number(env("RISK_MONITOR_INTERVAL_MS", "10000"));
   const once = process.env.RISK_MONITOR_ONCE === "true";
 
   do {
-    const result = await monitorRiskOnce(agent.id);
+    const result = process.env.RISK_MONITOR_AGENT_ID
+      ? await monitorRiskOnce(process.env.RISK_MONITOR_AGENT_ID)
+      : await monitorAllRiskPoliciesOnce();
     console.log(JSON.stringify(result, null, 2));
 
-    if (result.event || once) {
+    const hasEvent = Array.isArray(result)
+      ? result.some((item) => item.event)
+      : Boolean(result.event);
+
+    if (hasEvent || once) {
       break;
     }
 

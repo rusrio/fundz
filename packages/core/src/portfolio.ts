@@ -1,5 +1,6 @@
 import { prisma } from "@fundz/db";
 import { getUniswapQuote } from "@fundz/uniswap-adapter";
+import { toIsoDate } from "./mappers.js";
 
 type RpcCall = {
   to: string;
@@ -99,6 +100,51 @@ function parseAllowedTokens(value: string | null | undefined): string[] {
   }
 }
 
+async function pnlHistoryForAgent(agentId: string, initialValue: string) {
+  const snapshots = await prisma.riskSnapshot.findMany({
+    where: { agentId },
+    orderBy: { createdAt: "desc" },
+    take: 48
+  });
+  const initial = BigInt(initialValue);
+
+  return snapshots.reverse().map((snapshot) => {
+    const totalValue = BigInt(snapshot.totalValue);
+    const pnl = totalValue - initial;
+
+    return {
+      createdAt: toIsoDate(snapshot.createdAt),
+      totalValue: snapshot.totalValue,
+      pnl: pnl.toString(),
+      pnlBps: initial > 0n ? Number((pnl * 10000n) / initial) : 0,
+      breached: snapshot.breached
+    };
+  });
+}
+
+function appendCurrentPnlPoint(input: {
+  history: Awaited<ReturnType<typeof pnlHistoryForAgent>>;
+  totalValue: bigint;
+  pnl: bigint;
+  pnlBps: number;
+  enabled: boolean;
+}) {
+  if (!input.enabled && input.history.length === 0) {
+    return input.history;
+  }
+
+  return [
+    ...input.history,
+    {
+      createdAt: toIsoDate(new Date()),
+      totalValue: input.totalValue.toString(),
+      pnl: input.pnl.toString(),
+      pnlBps: input.pnlBps,
+      breached: false
+    }
+  ];
+}
+
 export async function listPortfolioDashboardStates() {
   const agents = await prisma.agent.findMany({
     include: {
@@ -117,6 +163,8 @@ export async function listPortfolioDashboardStates() {
     ]);
 
     if (!agent.safeAddress) {
+      const initialValue = agent.riskPolicy?.initialValue ?? "0";
+
       return {
         agentId: agent.id,
         safeAddress: null,
@@ -125,6 +173,7 @@ export async function listPortfolioDashboardStates() {
         pnl: "0",
         pnlBps: 0,
         drawdown: "0",
+        pnlHistory: await pnlHistoryForAgent(agent.id, initialValue),
         positions: allowedTokens.map((address) => ({
           ...tokenMeta(address),
           balance: "0",
@@ -160,6 +209,14 @@ export async function listPortfolioDashboardStates() {
       const pnl = totalValue - initialValue;
       const drawdown = pnl < 0n ? -pnl : 0n;
       const pnlBps = initialValue > 0n ? Number((pnl * 10000n) / initialValue) : 0;
+      const pnlHistory = await pnlHistoryForAgent(agent.id, initialValue.toString());
+      const pnlHistoryWithCurrent = appendCurrentPnlPoint({
+        history: pnlHistory,
+        totalValue,
+        pnl,
+        pnlBps,
+        enabled: Boolean(agent.riskPolicy?.enabled)
+      });
 
       return {
         agentId: agent.id,
@@ -169,10 +226,13 @@ export async function listPortfolioDashboardStates() {
         pnl: pnl.toString(),
         pnlBps,
         drawdown: drawdown.toString(),
+        pnlHistory: pnlHistoryWithCurrent,
         positions,
         error: null
       };
     } catch (error) {
+      const initialValue = agent.riskPolicy?.initialValue ?? "0";
+
       return {
         agentId: agent.id,
         safeAddress: agent.safeAddress,
@@ -181,6 +241,7 @@ export async function listPortfolioDashboardStates() {
         pnl: "0",
         pnlBps: 0,
         drawdown: "0",
+        pnlHistory: await pnlHistoryForAgent(agent.id, initialValue),
         positions: allowedTokens.map((address) => ({
           ...tokenMeta(address),
           balance: "0",
