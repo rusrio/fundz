@@ -73,7 +73,7 @@ pnpm typecheck
 
 Set `UNISWAP_API_KEY` in `.env` to enable real Uniswap quotes. Without it, approved intents still create a pending execution with a clear configuration message.
 
-For the full hackathon walkthrough, see [DEMO_CHEATSHEET.md](./DEMO_CHEATSHEET.md). It covers setup, Tenderly preparation, MCP/OpenClaw flow, risk monitor, market-move simulation, and troubleshooting.
+Feedback for the Uniswap Foundation is available on [`FEEDBACK.md`](./.FEEDBACK.md)
 
 ---
 
@@ -263,15 +263,13 @@ See [`.env.example`](./.env.example) for the full reference.
 - Receipt-aware execution failure handling
 - Risk monitor with bearer-token revocation and emergency Safe exit
 - Agent payout requests (80% of positive portfolio delta)
-- Tenderly market-move simulation script
+- Tenderly market-move simulation scripts
 
 **Not included yet:**
-- Cryptographic signature verification on intents
 - Editable policies in the dashboard
 - Production auth
 - Automatic Safe deployment pool
 - Multi-protocol adapters beyond Uniswap
-- Production-grade execution monitoring and reconciliation
 
 ---
 
