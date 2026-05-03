@@ -266,6 +266,7 @@ See [`.env.example`](./.env.example) for the full reference.
 - Tenderly market-move simulation scripts
 
 **Not included yet:**
+- AI Agent evaluation model to prove profitability!
 - Editable policies in the dashboard
 - Production auth
 - Automatic Safe deployment pool
